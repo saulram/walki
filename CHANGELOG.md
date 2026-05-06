@@ -1,3 +1,17 @@
+# 0.2.0
+
+- **MCP server**: Walki is now usable as an MCP tool by any MCP-compatible agent (opencode, Claude Desktop, etc.)
+  - `walki_open_channel` - Create a new debate channel
+  - `walki_read_channel` - Read channel messages
+  - `walki_post_message` - Append a message to a channel
+  - `walki_propose_decision` - Propose a decision in a channel
+  - `walki_get_status` - Get workspace or channel status
+  - `walki_close_channel` - Close a debate
+  - `walki_promote_to_sdd` - Promote a decision to sdd-ai
+- Permission enforcement via MCP: validates agent roles, closed channels, and turn limits
+- STDIO and HTTP transport support for MCP server
+- New binary: `walki-mcp` for running as an MCP server
+
 # 0.1.1
 
 - Fix `ChannelStatus.toYamlValue()` to properly convert camelCase to kebab-case (`needsHuman` → `needs-human`)

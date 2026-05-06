@@ -21,10 +21,12 @@ Local coordination protocol for AI agents. Dart CLI tool.
 - `lib/src/agents/` - Agent model
 - `lib/src/decisions/` - Decision model
 - `lib/src/tasks/` - Task model
+- `lib/src/mcp/` - MCP server tools (7 tools: open_channel, read_channel, post_message, propose_decision, get_status, close_channel, promote_to_sdd)
 
 ## Commands
 
 ```bash
+# CLI
 dart run bin/walki.dart init --agents codex,claude
 dart run bin/walki.dart debate <id> "question"
 dart run bin/walki.dart say <agent> <channel> "message" --kind proposal
@@ -37,6 +39,12 @@ dart run bin/walki.dart promote <channel> --to sdd-ai
 dart run bin/walki.dart export <channel> --format json
 dart run bin/walki.dart agent add <name> --role <role>
 dart run bin/walki.dart rules add <name>
+
+# MCP server (STDIO)
+dart run bin/walki_mcp.dart
+
+# MCP server (HTTP)
+dart run bin/walki_mcp.dart --http --port 8080
 ```
 
 ## Testing

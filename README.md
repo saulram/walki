@@ -228,7 +228,67 @@ Walki enforces protocol-level permissions when appending messages:
 - **Git-native**: Debates are diffable, reviewable in PRs.
 - **Human-mediated**: Agents propose, humans decide.
 - **Agent-agnostic**: Works with any agent that can read and write files.
+- **MCP-native**: Agents can use Walki as an MCP tool directly.
 - **Stop conditions explicit**: Every debate has a max turn limit and clear exit conditions.
+
+## MCP Integration
+
+Walki exposes an MCP server so agents like opencode, Claude Desktop, and other MCP clients can use it natively:
+
+```bash
+# STDIO transport (for CLI agents)
+walki-mcp
+
+# HTTP transport (for remote agents)
+walki-mcp --http --port 8080
+```
+
+### Available MCP tools
+
+| Tool | Description |
+|------|-------------|
+| `walki_open_channel` | Create a new debate channel with prompt, agents, and rules |
+| `walki_read_channel` | Read channel messages (full or last N) |
+| `walki_post_message` | Append a message to a channel with kind and OVER marker |
+| `walki_propose_decision` | Propose a decision with rationale, risks, and required tests |
+| `walki_get_status` | Get channel or workspace status |
+| `walki_close_channel` | Close a debate (accepted, blocked, needs-human, etc.) |
+| `walki_promote_to_sdd` | Promote a decision to sdd-ai or decisions |
+
+### Example: opencode using Walki via MCP
+
+When Walki is configured as an MCP server in opencode, you can ask:
+
+> "Open a debate about auth architecture and let Codex and Claude deliberate"
+
+opencode will call `walki_open_channel`, read the channel, and coordinate agents through `walki_post_message` — no manual copy-pasting needed.
+
+### Configuration for opencode
+
+Add to your project's MCP config:
+
+```json
+{
+  "mcpServers": {
+    "walki": {
+      "command": "walki-mcp",
+      "args": []
+    }
+  }
+}
+```
+
+Or for HTTP mode:
+
+```json
+{
+  "mcpServers": {
+    "walki": {
+      "url": "http://localhost:8080/mcp"
+    }
+  }
+}
+```
 
 ## Custom instructions
 
@@ -292,7 +352,7 @@ Walki is a Dart CLI. Core modules:
 - **Rules**: InstructionLoader (hierarchical, deduplicating, glob-aware)
 - **Validation**: PermissionEngine (protocol-level action validation, channel health checks)
 - **SddAiAdapter**: Detect `sdd-ai/`, create change folders, promote decisions
-- **MCP** (future): Expose commands as MCP tools for agent-native usage
+- **MCP**: Expose all commands as MCP tools via STDIO and HTTP transports
 
 ## Development
 
@@ -307,10 +367,9 @@ dart test
 dart analyze
 
 # Run locally
-dart run bin/walki.dart init --agents codex,claude
-
-# Build binary
+# Build binaries
 dart compile exe bin/walki.dart -o walki
+dart compile exe bin/walki_mcp.dart -o walki-mcp
 ```
 
 ## Roadmap
@@ -320,7 +379,7 @@ dart compile exe bin/walki.dart -o walki
 | 0 | Spike: validate protocol with Markdown files | Done |
 | 1 | CLI MVP: init, agent, debate, say, read, status, close, summarize, doctor, rules, export, promote | **Released v0.1.0** |
 | 2 | sdd_ai integration: debate, promote, change folders | Planned |
-| 3 | MCP server: tools, permission enforcement | Planned |
+| 3 | MCP server: tools, permission enforcement, STDIO + HTTP | **Released v0.2.0** |
 | 4 | Skills/prompt packs for agents | Planned |
 | 5 | Advanced UX: watch mode, TUI, search, semantic summaries | Planned |
 

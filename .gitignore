@@ -5,4 +5,5 @@ pubspec.lock
 .walki/
 *.o
 *.obj
-walkicoverage/
+walki
+walki_mcpcoverage/

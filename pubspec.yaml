@@ -1,6 +1,6 @@
 name: walki
 description: Local coordination protocol for AI agents. Let agents debate, reach agreements, and produce reviewable decisions through Markdown files in your repo.
-version: 0.1.1
+version: 0.2.0
 repository: https://github.com/saulram/walki
 license: MIT
 
@@ -10,6 +10,7 @@ environment:
 dependencies:
   args: ^2.5.0
   mason_logger: ^0.3.0
+  mcp_server: ^2.0.0
   path: ^1.9.0
   yaml: ^3.1.2
 
@@ -18,6 +19,7 @@ dev_dependencies:
 
 executables:
   walki: walki
+  walki-mcp: walki_mcp
 
 topics:
   - cli
