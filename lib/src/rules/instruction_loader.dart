@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 
+/// Loads debate instructions from global, project, and domain-specific paths.
 class InstructionLoader {
+  /// Creates an [InstructionLoader].
   const InstructionLoader();
 
+  /// Loads instructions in precedence order and deduplicates by path.
   List<LoadedInstruction> load({
     required String projectDir,
     List<String> configPaths = const [],
@@ -106,6 +109,7 @@ class InstructionLoader {
     return name == pattern;
   }
 
+  /// Builds a markdown bundle that can be sent as an agent prompt preamble.
   String generateAgentInstructions(List<LoadedInstruction> instructions) {
     final buffer = StringBuffer();
     for (final instruction in instructions) {
@@ -118,29 +122,54 @@ class InstructionLoader {
   }
 }
 
+/// Origin category for a loaded instruction file.
 enum InstructionSource {
+  /// Built-in protocol defaults.
   protocol('Protocol defaults'),
+
+  /// User-level instructions in home directory.
   global('Global user instructions'),
+
+  /// Project-level instructions.
   project('Project instructions'),
+
+  /// Domain rules from `.walki/rules/`.
   domain('Domain rules'),
+
+  /// Extra files configured in `config.yaml`.
   config('Config instructions'),
+
+  /// Channel-specific instruction files.
   channel('Channel instructions'),
+
+  /// Architecture guidance from `sdd-ai/`.
   sddAi('SDD-AI architecture');
 
+  /// Creates an [InstructionSource] with a human-readable label.
   const InstructionSource(this.label);
+
+  /// Display label used in generated instruction bundles.
   final String label;
 }
 
+/// Instruction file contents plus source metadata.
 class LoadedInstruction {
+  /// Creates a [LoadedInstruction].
   const LoadedInstruction({
     required this.path,
     required this.source,
     required this.content,
   });
 
+  /// Absolute file path of the instruction.
   final String path;
+
+  /// Source category used for precedence and reporting.
   final InstructionSource source;
+
+  /// Full file contents.
   final String content;
 
+  /// Formats this instruction as a markdown list item.
   String toMarkdownListItem() => '- $path (${source.label})';
 }

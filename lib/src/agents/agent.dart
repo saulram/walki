@@ -1,4 +1,6 @@
+/// Metadata and prompt scaffold for a participant in a Walki debate.
 class Agent {
+  /// Creates an [Agent] with an identifier, role, and allowed actions.
   const Agent({
     required this.id,
     required this.role,
@@ -6,11 +8,19 @@ class Agent {
     this.can = const [],
   });
 
+  /// Unique identifier used in channel messages and filenames.
   final String id;
+
+  /// Agent role such as `implementer`, `reviewer`, or `owner`.
   final String role;
+
+  /// Optional human-readable description of the agent.
   final String description;
+
+  /// Allowed protocol actions for this agent.
   final List<String> can;
 
+  /// Serializes this agent into the markdown format used in `.walki/agents/`.
   String toMarkdown() {
     final buffer = StringBuffer();
     buffer.writeln('# Agent: $id');

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "walki": {
+      "command": "walki-mcp",
+      "args": []
+    }
+  }
+}

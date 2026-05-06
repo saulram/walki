@@ -1,4 +1,6 @@
+/// Task artifact derived from a decision and ready for execution.
 class Task {
+  /// Creates a [Task].
   const Task({
     required this.id,
     required this.channelId,
@@ -10,15 +12,31 @@ class Task {
     required this.createdAt,
   });
 
+  /// Unique task identifier.
   final String id;
+
+  /// Channel that originated this task.
   final String channelId;
+
+  /// Task body.
   final String description;
+
+  /// Current task status.
   final String status;
+
+  /// Decision identifier tied to this task.
   final String decisionId;
+
+  /// Suggested implementing owner.
   final String suggestedOwner;
+
+  /// Acceptance criteria for completion.
   final List<String> acceptanceCriteria;
+
+  /// Creation timestamp.
   final DateTime createdAt;
 
+  /// Serializes this task to markdown.
   String toMarkdown() {
     final buffer = StringBuffer();
     buffer.writeln('# Task: $id');

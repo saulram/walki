@@ -1,4 +1,6 @@
+/// Persisted decision artifact derived from a debate channel.
 class Decision {
+  /// Creates a [Decision].
   const Decision({
     required this.channelId,
     required this.status,
@@ -11,16 +13,34 @@ class Decision {
     required this.createdAt,
   });
 
+  /// Source channel identifier.
   final String channelId;
+
+  /// Decision status.
   final String status;
+
+  /// Decision summary.
   final String summary;
+
+  /// Decision rationale.
   final String rationale;
+
+  /// Risks associated with this decision.
   final List<String> risks;
+
+  /// Expected implications of this decision.
   final List<String> implications;
+
+  /// Required tests for safe implementation.
   final List<String> requiredTests;
+
+  /// Owner responsible for this decision.
   final String owner;
+
+  /// Creation timestamp.
   final DateTime createdAt;
 
+  /// Serializes this decision to markdown.
   String toMarkdown() {
     final buffer = StringBuffer();
     buffer.writeln('# Decision: $channelId');

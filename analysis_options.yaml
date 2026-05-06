@@ -1,4 +1,8 @@
 analyzer:
+  exclude:
+    - bin/**
+    - lib/src/cli/**
+    - lib/src/mcp/**
   language:
     strict-casts: true
     strict-inference: true
@@ -6,5 +10,6 @@ analyzer:
 
 linter:
   rules:
+    - public_member_api_docs
     - prefer_single_quotes
     - require_trailing_commas

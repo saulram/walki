@@ -1,3 +1,13 @@
+# 0.3.0
+
+- Add `example/` with a runnable basic debate flow and MCP config sample
+- Add "When should I use Walki?" and "Why not just use chat?" sections to README
+- Enable `public_member_api_docs` lint and document the exported public API
+- Scope docs lint to public package API by excluding internal CLI/MCP entrypoints
+- BREAKING: Remove MCP HTTP transport; `walki-mcp` now runs in STDIO-only mode
+- BREAKING: `walki_close_channel` and `walki_promote_to_sdd` MCP tools now require `agent` in input
+- Security hardening: channel/id validation and safe canonical path containment for MCP file operations
+
 # 0.2.2
 
 - Fix messages being lost on append: post/close now use append-only instead of parse-rewrite

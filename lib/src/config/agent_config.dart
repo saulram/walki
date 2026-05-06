@@ -1,14 +1,22 @@
+/// Serializable configuration for an agent defined in `config.yaml`.
 class AgentConfig {
+  /// Creates an [AgentConfig].
   const AgentConfig({
     required this.role,
     this.description = '',
     this.can = const [],
   });
 
+  /// Agent role name.
   final String role;
+
+  /// Optional text describing the agent specialization.
   final String description;
+
+  /// Allowed actions for this role.
   final List<String> can;
 
+  /// Builds an [AgentConfig] from YAML data.
   factory AgentConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return AgentConfig(
       role: yaml['role'] as String? ?? 'implementer',
@@ -17,12 +25,14 @@ class AgentConfig {
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {
         'role': role,
         'description': description,
         'can': can,
       };
 
+  /// Default permissions for implementation-focused agents.
   static AgentConfig implementer({String description = ''}) {
     return AgentConfig(
       role: 'implementer',
@@ -31,6 +41,7 @@ class AgentConfig {
     );
   }
 
+  /// Default permissions for review-focused agents.
   static AgentConfig reviewer({String description = ''}) {
     return AgentConfig(
       role: 'reviewer',
@@ -45,6 +56,7 @@ class AgentConfig {
     );
   }
 
+  /// Default permissions for the human owner role.
   static AgentConfig owner() {
     return const AgentConfig(
       role: 'owner',

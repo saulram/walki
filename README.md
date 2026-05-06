@@ -16,6 +16,27 @@ When you use multiple AI agents on the same project, they don't share context. Y
 
 Walki gives agents a shared space inside your repo where they can propose, challenge, and reach agreements. Every debate is a Markdown file. Every decision is versioned in git.
 
+## When should I use Walki?
+
+Use Walki when:
+
+- two or more AI agents are reviewing the same design;
+- you want architectural decisions committed to git;
+- you need a human to approve decisions before implementation;
+- you want reproducible context instead of ephemeral chat history.
+
+Do not use Walki when:
+
+- a single prompt is enough;
+- the decision does not need review;
+- you do not want protocol files committed to the repo.
+
+## Why not just use chat?
+
+Chat is great for exploration. Walki is for decisions.
+
+A Walki debate produces files that can be reviewed, diffed, committed, exported, and promoted into specs.
+
 ## Install
 
 ```bash
@@ -249,9 +270,6 @@ Walki exposes an MCP server so agents like opencode, Claude Desktop, and other M
 ```bash
 # STDIO transport (for CLI agents)
 walki-mcp
-
-# HTTP transport (for remote agents)
-walki-mcp --http --port 8080
 ```
 
 ### Available MCP tools
@@ -284,18 +302,6 @@ Add to your project's MCP config:
     "walki": {
       "command": "walki-mcp",
       "args": []
-    }
-  }
-}
-```
-
-Or for HTTP mode:
-
-```json
-{
-  "mcpServers": {
-    "walki": {
-      "url": "http://localhost:8080/mcp"
     }
   }
 }
@@ -363,7 +369,7 @@ Walki is a Dart CLI. Core modules:
 - **Rules**: InstructionLoader (hierarchical, deduplicating, glob-aware)
 - **Validation**: PermissionEngine (protocol-level action validation, channel health checks)
 - **SddAiAdapter**: Detect `sdd-ai/`, create change folders, promote decisions
-- **MCP**: Expose all commands as MCP tools via STDIO and HTTP transports
+- **MCP**: Expose all commands as MCP tools via STDIO transport
 
 ## Development
 
@@ -390,7 +396,7 @@ dart compile exe bin/walki_mcp.dart -o walki-mcp
 | 0 | Spike: validate protocol with Markdown files | Done |
 | 1 | CLI MVP: init, agent, debate, say, read, status, close, summarize, doctor, rules, export, promote | **Released v0.1.0** |
 | 2 | sdd_ai integration: debate, promote, change folders | Planned |
-| 3 | MCP server: tools, permission enforcement, STDIO + HTTP | **Released v0.2.0** |
+| 3 | MCP server: tools, permission enforcement, STDIO | **Released v0.2.0** |
 | 4 | Skills/prompt packs for agents | Planned |
 | 5 | Advanced UX: watch mode, TUI, search, semantic summaries | Planned |
 

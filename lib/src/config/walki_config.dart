@@ -1,6 +1,8 @@
 import 'agent_config.dart';
 
+/// Root configuration model for a Walki workspace.
 class WalkiConfig {
+  /// Creates a [WalkiConfig].
   const WalkiConfig({
     this.version = 1,
     required this.project,
@@ -12,15 +14,31 @@ class WalkiConfig {
     this.sddAi = const SddAiConfig(),
   });
 
+  /// Config schema version.
   final int version;
+
+  /// Project-level metadata.
   final ProjectConfig project;
+
+  /// Storage layout configuration.
   final StorageConfig storage;
+
+  /// Registered agents keyed by identifier.
   final Map<String, AgentConfig> agents;
+
+  /// Instruction loading configuration.
   final InstructionConfig instructions;
+
+  /// Debate constraints and stopping limits.
   final LimitsConfig limits;
+
+  /// Decision validation and promotion requirements.
   final DecisionsConfig decisions;
+
+  /// sdd-ai integration settings.
   final SddAiConfig sddAi;
 
+  /// Builds [WalkiConfig] from YAML data.
   factory WalkiConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     final agentsRaw = yaml['agents'] as Map<dynamic, dynamic>? ?? {};
     final agents = <String, AgentConfig>{};
@@ -40,6 +58,7 @@ class WalkiConfig {
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() {
     return {
       'version': version,
@@ -53,6 +72,7 @@ class WalkiConfig {
     };
   }
 
+  /// Returns a copy with selected fields replaced.
   WalkiConfig copyWith({
     ProjectConfig? project,
     StorageConfig? storage,
@@ -75,19 +95,26 @@ class WalkiConfig {
   }
 }
 
+/// Project identity values.
 class ProjectConfig {
+  /// Creates a [ProjectConfig].
   const ProjectConfig({this.name = ''});
 
+  /// Project name.
   final String name;
 
+  /// Builds [ProjectConfig] from YAML data.
   factory ProjectConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return ProjectConfig(name: yaml['name'] as String? ?? '');
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {'name': name};
 }
 
+/// Filesystem paths and primary format used by Walki artifacts.
 class StorageConfig {
+  /// Creates a [StorageConfig].
   const StorageConfig({
     this.primaryFormat = 'markdown',
     this.channelDir = '.walki/channels',
@@ -96,12 +123,22 @@ class StorageConfig {
     this.generatedStateDir = '.walki/state',
   });
 
+  /// Canonical storage format, currently `markdown`.
   final String primaryFormat;
+
+  /// Relative directory for channel files.
   final String channelDir;
+
+  /// Relative directory for promoted decision files.
   final String decisionDir;
+
+  /// Relative directory for task files.
   final String taskDir;
+
+  /// Relative directory for generated state files.
   final String generatedStateDir;
 
+  /// Builds [StorageConfig] from YAML data.
   factory StorageConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return StorageConfig(
       primaryFormat: yaml['primary_format'] as String? ?? 'markdown',
@@ -112,6 +149,7 @@ class StorageConfig {
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {
         'primary_format': primaryFormat,
         'channel_dir': channelDir,
@@ -121,21 +159,28 @@ class StorageConfig {
       };
 }
 
+/// Explicit extra instruction files to load during debates.
 class InstructionConfig {
+  /// Creates an [InstructionConfig].
   const InstructionConfig({this.load = const []});
 
+  /// Relative file paths loaded as additional instructions.
   final List<String> load;
 
+  /// Builds [InstructionConfig] from YAML data.
   factory InstructionConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return InstructionConfig(
       load: (yaml['load'] as List<dynamic>? ?? []).cast<String>(),
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {'load': load};
 }
 
+/// Debate lifecycle limits and stop conditions.
 class LimitsConfig {
+  /// Creates a [LimitsConfig].
   const LimitsConfig({
     this.maxTurns = 8,
     this.maxMessagesPerAgent = 4,
@@ -146,14 +191,28 @@ class LimitsConfig {
     this.stopOnMissingContext = true,
   });
 
+  /// Maximum turns allowed per channel.
   final int maxTurns;
+
+  /// Maximum messages allowed per agent.
   final int maxMessagesPerAgent;
+
+  /// Maximum structured decisions allowed per channel.
   final int maxDecisionsPerChannel;
+
+  /// Whether each message must end with the `OVER` marker.
   final bool requireOverMarker;
+
+  /// Whether debate should stop on consensus.
   final bool stopOnConsensus;
+
+  /// Whether debate should stop when blocked.
   final bool stopOnBlocked;
+
+  /// Whether debate should stop when context is missing.
   final bool stopOnMissingContext;
 
+  /// Builds [LimitsConfig] from YAML data.
   factory LimitsConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return LimitsConfig(
       maxTurns: yaml['max_turns'] as int? ?? 8,
@@ -166,6 +225,7 @@ class LimitsConfig {
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {
         'max_turns': maxTurns,
         'max_messages_per_agent': maxMessagesPerAgent,
@@ -176,6 +236,7 @@ class LimitsConfig {
         'stop_on_missing_context': stopOnMissingContext,
       };
 
+  /// Returns a copy with selected fields replaced.
   LimitsConfig copyWith({
     int? maxTurns,
     int? maxMessagesPerAgent,
@@ -197,7 +258,9 @@ class LimitsConfig {
   }
 }
 
+/// Decision-quality requirements enforced by protocol conventions.
 class DecisionsConfig {
+  /// Creates a [DecisionsConfig].
   const DecisionsConfig({
     this.requireRationale = true,
     this.requireRisks = true,
@@ -205,11 +268,19 @@ class DecisionsConfig {
     this.promoteRequiresHuman = true,
   });
 
+  /// Whether rationale is required for accepted decisions.
   final bool requireRationale;
+
+  /// Whether risks are required for accepted decisions.
   final bool requireRisks;
+
+  /// Whether required tests are mandatory in decision records.
   final bool requireTests;
+
+  /// Whether promotion requires explicit human approval.
   final bool promoteRequiresHuman;
 
+  /// Builds [DecisionsConfig] from YAML data.
   factory DecisionsConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return DecisionsConfig(
       requireRationale: yaml['require_rationale'] as bool? ?? true,
@@ -219,6 +290,7 @@ class DecisionsConfig {
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {
         'require_rationale': requireRationale,
         'require_risks': requireRisks,
@@ -227,7 +299,9 @@ class DecisionsConfig {
       };
 }
 
+/// Integration settings for repos that contain an `sdd-ai/` tree.
 class SddAiConfig {
+  /// Creates an [SddAiConfig].
   const SddAiConfig({
     this.enabled = false,
     this.changeDir = 'sdd-ai/changes',
@@ -235,11 +309,19 @@ class SddAiConfig {
     this.specsDir = 'sdd-ai/specs',
   });
 
+  /// Enables sdd-ai integration features.
   final bool enabled;
+
+  /// Base directory where change folders are created.
   final String changeDir;
+
+  /// Directory for promoted architecture artifacts.
   final String architectureDir;
+
+  /// Directory for promoted specification artifacts.
   final String specsDir;
 
+  /// Builds [SddAiConfig] from YAML data.
   factory SddAiConfig.fromYaml(Map<dynamic, dynamic> yaml) {
     return SddAiConfig(
       enabled: yaml['enabled'] as bool? ?? false,
@@ -249,6 +331,7 @@ class SddAiConfig {
     );
   }
 
+  /// Converts this config into YAML-compatible data.
   Map<String, dynamic> toYaml() => {
         'enabled': enabled,
         'change_dir': changeDir,

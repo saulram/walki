@@ -1,13 +1,19 @@
 import '../config/agent_config.dart';
 import '../channels/channel.dart';
 
+/// Enforces protocol permissions and basic channel integrity checks.
 class PermissionEngine {
+  /// Creates a [PermissionEngine].
   const PermissionEngine();
 
+  /// Returns whether [agent] can execute [action].
   bool canPerformAction(AgentConfig agent, String action) {
     return agent.can.contains(action);
   }
 
+  /// Validates whether a message append action is allowed.
+  ///
+  /// Returns a list of human-readable violations. An empty list means valid.
   List<String> validateMessage(
     AgentConfig agent,
     Channel channel,
@@ -46,6 +52,9 @@ class PermissionEngine {
     return violations;
   }
 
+  /// Runs consistency checks over a parsed [channel].
+  ///
+  /// Returns a list of discovered issues.
   List<String> validateChannelHealth(Channel channel) {
     final issues = <String>[];
 

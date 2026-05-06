@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:mcp_server/mcp_server.dart';
+import 'package:path/path.dart' as p;
 import '../channels/channel.dart';
 import '../channels/channel_parser.dart';
 import '../channels/channel_formatter.dart';
@@ -174,6 +175,10 @@ void registerWalkiTools(Server server) {
           'type': 'string',
           'description': 'The channel ID to close',
         },
+        'agent': {
+          'type': 'string',
+          'description': 'Agent requesting the close action',
+        },
         'status': {
           'type': 'string',
           'enum': [
@@ -188,7 +193,7 @@ void registerWalkiTools(Server server) {
               'The status to close the channel with (default: accepted)',
         },
       },
-      'required': ['channel'],
+      'required': ['channel', 'agent'],
     },
     handler: _closeChannel,
   );
@@ -204,13 +209,17 @@ void registerWalkiTools(Server server) {
           'type': 'string',
           'description': 'The channel ID to promote',
         },
+        'agent': {
+          'type': 'string',
+          'description': 'Agent requesting the promotion',
+        },
         'target': {
           'type': 'string',
           'enum': ['sdd-ai', 'decisions'],
           'description': 'Promotion target (default: sdd-ai)',
         },
       },
-      'required': ['channel'],
+      'required': ['channel', 'agent'],
     },
     handler: _promoteToSdd,
   );
@@ -226,6 +235,11 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
   final prompt = args['prompt'] as String;
   final agentsStr = args['agents'] as String? ?? '';
   final maxTurns = args['max_turns'] as int? ?? 8;
+  final normalizedId = _sanitizeArtifactId(id);
+  if (normalizedId == null) {
+    return _error(
+        'Invalid channel ID "$id". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+  }
 
   WalkiConfig config;
   try {
@@ -242,9 +256,9 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
           .toList()
       : config.agents.keys.where((k) => k != 'human').toList();
 
-  final channelFile = File('${config.storage.channelDir}/$id.md');
+  final channelFile = _channelFileFor(config, normalizedId);
   if (channelFile.existsSync()) {
-    return _error('Channel "$id" already exists.');
+    return _error('Channel "$normalizedId" already exists.');
   }
 
   channelFile.parent.createSync(recursive: true);
@@ -259,7 +273,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
   ];
 
   final channel = Channel(
-    id: id,
+    id: normalizedId,
     status: ChannelStatus.open,
     createdAt: DateTime.now(),
     participants: participants,
@@ -276,14 +290,15 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
   for (final agentId in participants) {
     final agentConfig = config.agents[agentId];
     if (agentConfig != null) {
-      prompts[agentId] = _generateAgentPrompt(agentId, agentConfig.role, id);
+      prompts[agentId] =
+          _generateAgentPrompt(agentId, agentConfig.role, normalizedId);
     }
   }
 
   return CallToolResult(content: [
     TextContent(
         text:
-            'Channel "$id" created with ${participants.length} participants and $maxTurns max turns.\n\nAgent prompts:\n${prompts.entries.map((e) => '${e.key}:\n${e.value}').join('\n\n')}'),
+            'Channel "$normalizedId" created with ${participants.length} participants and $maxTurns max turns.\n\nAgent prompts:\n${prompts.entries.map((e) => '${e.key}:\n${e.value}').join('\n\n')}'),
   ]);
 }
 
@@ -295,6 +310,11 @@ Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
 
   final channelId = args['channel'] as String;
   final tail = args['tail'] as int?;
+  final normalizedChannelId = _sanitizeArtifactId(channelId);
+  if (normalizedChannelId == null) {
+    return _error(
+        'Invalid channel ID "$channelId". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+  }
 
   WalkiConfig config;
   try {
@@ -303,9 +323,9 @@ Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
     return _error('Failed to load config: $e');
   }
 
-  final channelFile = File('${config.storage.channelDir}/$channelId.md');
+  final channelFile = _channelFileFor(config, normalizedChannelId);
   if (!channelFile.existsSync()) {
-    return _error('Channel "$channelId" not found.');
+    return _error('Channel "$normalizedChannelId" not found.');
   }
 
   final parser = const ChannelParser();
@@ -340,6 +360,11 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
   final agent = args['agent'] as String;
   final message = args['message'] as String;
   final kind = args['kind'] as String? ?? 'proposal';
+  final normalizedChannelId = _sanitizeArtifactId(channelId);
+  if (normalizedChannelId == null) {
+    return _error(
+        'Invalid channel ID "$channelId". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+  }
 
   WalkiConfig config;
   try {
@@ -348,30 +373,31 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
     return _error('Failed to load config: $e');
   }
 
-  final channelFile = File('${config.storage.channelDir}/$channelId.md');
+  final channelFile = _channelFileFor(config, normalizedChannelId);
   if (!channelFile.existsSync()) {
-    return _error('Channel "$channelId" not found.');
+    return _error('Channel "$normalizedChannelId" not found.');
   }
 
   final parser = const ChannelParser();
   final channel = parser.parse(channelFile.readAsStringSync());
 
   if (channel.isClosed) {
-    return _error('Channel "$channelId" is closed.');
+    return _error('Channel "$normalizedChannelId" is closed.');
   }
 
   final agentConfig = config.agents[agent];
+  if (agentConfig == null) {
+    return _error('Unknown agent "$agent". Register the agent before posting.');
+  }
   final permissionEngine = const PermissionEngine();
-  if (agentConfig != null) {
-    final violations = permissionEngine.validateMessage(
-      agentConfig,
-      channel,
-      'append',
-      agentId: agent,
-    );
-    if (violations.isNotEmpty) {
-      return _error('Permission violations: ${violations.join("; ")}');
-    }
+  final violations = permissionEngine.validateMessage(
+    agentConfig,
+    channel,
+    'append',
+    agentId: agent,
+  );
+  if (violations.isNotEmpty) {
+    return _error('Permission violations: ${violations.join("; ")}');
   }
 
   final channelMessage = ChannelMessage(
@@ -395,7 +421,7 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
   return CallToolResult(content: [
     TextContent(
         text:
-            'Message appended to channel "$channelId" by $agent ($kind). Turn $turnCount/${channel.maxTurns}.'),
+            'Message appended to channel "$normalizedChannelId" by $agent ($kind). Turn $turnCount/${channel.maxTurns}.'),
   ]);
 }
 
@@ -413,6 +439,11 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
       (args['risks'] as List<dynamic>?)?.cast<String>().toList() ?? [];
   final requiredTests =
       (args['required_tests'] as List<dynamic>?)?.cast<String>().toList() ?? [];
+  final normalizedChannelId = _sanitizeArtifactId(channelId);
+  if (normalizedChannelId == null) {
+    return _error(
+        'Invalid channel ID "$channelId". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+  }
 
   WalkiConfig config;
   try {
@@ -421,16 +452,27 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
     return _error('Failed to load config: $e');
   }
 
-  final channelFile = File('${config.storage.channelDir}/$channelId.md');
+  final channelFile = _channelFileFor(config, normalizedChannelId);
   if (!channelFile.existsSync()) {
-    return _error('Channel "$channelId" not found.');
+    return _error('Channel "$normalizedChannelId" not found.');
   }
 
   final parser = const ChannelParser();
   final channel = parser.parse(channelFile.readAsStringSync());
 
   if (channel.isClosed) {
-    return _error('Channel "$channelId" is closed.');
+    return _error('Channel "$normalizedChannelId" is closed.');
+  }
+
+  final agentConfig = config.agents[agent];
+  if (agentConfig == null) {
+    return _error(
+        'Unknown agent "$agent". Register the agent before proposing decisions.');
+  }
+  final permissionEngine = const PermissionEngine();
+  if (!permissionEngine.canPerformAction(agentConfig, 'propose_decision')) {
+    return _error(
+        'Permission violations: Agent "${agentConfig.role}" cannot perform action "propose_decision"');
   }
 
   final decision = ChannelDecision(
@@ -449,7 +491,8 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
 
   return CallToolResult(content: [
     TextContent(
-        text: 'Decision proposed in channel "$channelId" by $agent: $summary'),
+        text:
+            'Decision proposed in channel "$normalizedChannelId" by $agent: $summary'),
   ]);
 }
 
@@ -471,9 +514,15 @@ Future<CallToolResult> _getStatus(Map<String, dynamic> args) async {
   final formatter = const ChannelFormatter();
 
   if (channelId != null) {
-    final channelFile = File('${config.storage.channelDir}/$channelId.md');
+    final normalizedChannelId = _sanitizeArtifactId(channelId);
+    if (normalizedChannelId == null) {
+      return _error(
+          'Invalid channel ID "$channelId". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+    }
+
+    final channelFile = _channelFileFor(config, normalizedChannelId);
     if (!channelFile.existsSync()) {
-      return _error('Channel "$channelId" not found.');
+      return _error('Channel "$normalizedChannelId" not found.');
     }
 
     final parser = const ChannelParser();
@@ -484,7 +533,7 @@ Future<CallToolResult> _getStatus(Map<String, dynamic> args) async {
     ]);
   }
 
-  final channelsDir = Directory(config.storage.channelDir);
+  final channelsDir = Directory(_absoluteDir(config.storage.channelDir));
   final channelSummaries = <String>[];
 
   if (channelsDir.existsSync()) {
@@ -519,7 +568,13 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
   }
 
   final channelId = args['channel'] as String;
+  final agent = args['agent'] as String;
   final status = args['status'] as String? ?? 'accepted';
+  final normalizedChannelId = _sanitizeArtifactId(channelId);
+  if (normalizedChannelId == null) {
+    return _error(
+        'Invalid channel ID "$channelId". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+  }
 
   WalkiConfig config;
   try {
@@ -528,16 +583,26 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
     return _error('Failed to load config: $e');
   }
 
-  final channelFile = File('${config.storage.channelDir}/$channelId.md');
+  final channelFile = _channelFileFor(config, normalizedChannelId);
   if (!channelFile.existsSync()) {
-    return _error('Channel "$channelId" not found.');
+    return _error('Channel "$normalizedChannelId" not found.');
   }
 
   final parser = const ChannelParser();
   final channel = parser.parse(channelFile.readAsStringSync());
 
   if (channel.isClosed) {
-    return _error('Channel "$channelId" is already closed.');
+    return _error('Channel "$normalizedChannelId" is already closed.');
+  }
+
+  final agentConfig = config.agents[agent];
+  if (agentConfig == null) {
+    return _error('Unknown agent "$agent".');
+  }
+  final permissionEngine = const PermissionEngine();
+  if (!permissionEngine.canPerformAction(agentConfig, 'close_channel')) {
+    return _error(
+        'Permission violations: Agent "${agentConfig.role}" cannot perform action "close_channel"');
   }
 
   final newStatus = ChannelStatus.fromString(status);
@@ -547,7 +612,8 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
   channelFile.writeAsStringSync(content);
 
   return CallToolResult(content: [
-    TextContent(text: 'Channel "$channelId" closed with status: $status'),
+    TextContent(
+        text: 'Channel "$normalizedChannelId" closed with status: $status'),
   ]);
 }
 
@@ -558,13 +624,29 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
   }
 
   final channelId = args['channel'] as String;
+  final agent = args['agent'] as String;
   final target = args['target'] as String? ?? 'sdd-ai';
+  final normalizedChannelId = _sanitizeArtifactId(channelId);
+  if (normalizedChannelId == null) {
+    return _error(
+        'Invalid channel ID "$channelId". Use 1-128 characters: letters, numbers, ".", "_", "-".');
+  }
 
   WalkiConfig config;
   try {
     config = workspace.loadConfig();
   } catch (e) {
     return _error('Failed to load config: $e');
+  }
+
+  final agentConfig = config.agents[agent];
+  if (agentConfig == null) {
+    return _error('Unknown agent "$agent".');
+  }
+  final permissionEngine = const PermissionEngine();
+  if (!permissionEngine.canPerformAction(agentConfig, 'promote_to_sdd')) {
+    return _error(
+        'Permission violations: Agent "${agentConfig.role}" cannot perform action "promote_to_sdd"');
   }
 
   if (target == 'sdd-ai') {
@@ -575,7 +657,7 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
 
     final adapter = const SddAiAdapter();
     try {
-      final changeDir = adapter.promoteDecision(channelId, config);
+      final changeDir = adapter.promoteDecision(normalizedChannelId, config);
       return CallToolResult(content: [
         TextContent(text: 'Decision promoted to sdd-ai: $changeDir'),
       ]);
@@ -584,11 +666,11 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
     }
   }
 
-  final channelFile = File('${config.storage.channelDir}/$channelId.md');
-  final decisionFile = File('${config.storage.decisionDir}/$channelId.md');
+  final channelFile = _channelFileFor(config, normalizedChannelId);
+  final decisionFile = _decisionFileFor(config, normalizedChannelId);
 
   if (!channelFile.existsSync()) {
-    return _error('Channel "$channelId" not found.');
+    return _error('Channel "$normalizedChannelId" not found.');
   }
 
   decisionFile.parent.createSync(recursive: true);
@@ -597,6 +679,44 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
   return CallToolResult(content: [
     TextContent(text: 'Decision promoted to: ${decisionFile.path}'),
   ]);
+}
+
+final RegExp _artifactIdPattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$');
+
+String? _sanitizeArtifactId(String raw) {
+  final value = raw.trim();
+  if (value.isEmpty ||
+      value != raw ||
+      !_artifactIdPattern.hasMatch(value) ||
+      value.contains('..')) {
+    return null;
+  }
+  return value;
+}
+
+String _absoluteDir(String dirPath) {
+  return p.normalize(p.absolute(dirPath));
+}
+
+File _safeMarkdownFile({
+  required String baseDir,
+  required String id,
+}) {
+  final normalizedBaseDir = _absoluteDir(baseDir);
+  final candidate =
+      p.normalize(p.absolute(p.join(normalizedBaseDir, '$id.md')));
+  if (!p.isWithin(normalizedBaseDir, candidate)) {
+    throw StateError('Resolved path escapes storage directory.');
+  }
+  return File(candidate);
+}
+
+File _channelFileFor(WalkiConfig config, String id) {
+  return _safeMarkdownFile(baseDir: config.storage.channelDir, id: id);
+}
+
+File _decisionFileFor(WalkiConfig config, String id) {
+  return _safeMarkdownFile(baseDir: config.storage.decisionDir, id: id);
 }
 
 String _generateAgentPrompt(String agentId, String role, String channelId) {

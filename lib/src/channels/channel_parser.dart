@@ -1,8 +1,11 @@
 import 'channel.dart';
 
+/// Parses Walki channel markdown into structured models.
 class ChannelParser {
+  /// Creates a [ChannelParser].
   const ChannelParser();
 
+  /// Parses full channel markdown content into a [Channel].
   Channel parse(String markdown) {
     final lines = markdown.split('\n');
     var id = '';

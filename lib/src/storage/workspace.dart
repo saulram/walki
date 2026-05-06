@@ -4,30 +4,56 @@ import 'package:yaml/yaml.dart';
 import '../config/walki_config.dart';
 import '../config/agent_config.dart';
 
+/// Filesystem operations for creating and managing a `.walki/` workspace.
 class Workspace {
+  /// Creates a [Workspace].
   const Workspace();
 
+  /// Root directory name used by Walki.
   static const String walkiDir = '.walki';
+
+  /// Workspace configuration filename.
   static const String configFileName = 'config.yaml';
+
+  /// Project-level instructions filename.
   static const String instructionsFileName = 'instructions.md';
+
+  /// Relative directory for agent metadata files.
   static const String agentsDir = 'agents';
+
+  /// Relative directory for debate rules files.
   static const String rulesDir = 'rules';
+
+  /// Relative directory for channel markdown files.
   static const String channelsDir = 'channels';
+
+  /// Relative directory for promoted decision files.
   static const String decisionsDir = 'decisions';
+
+  /// Relative directory for generated task files.
   static const String tasksDir = 'tasks';
+
+  /// Relative directory for generated state files.
   static const String stateDir = 'state';
+
+  /// Relative directory for channel lock files.
   static const String locksDir = 'locks';
 
+  /// Returns whether a `.walki/` workspace exists.
   bool isInitialized([String? projectDir]) {
     final dir = projectDir ?? Directory.current.path;
     return Directory(p.join(dir, walkiDir)).existsSync();
   }
 
+  /// Returns whether an `sdd-ai/` directory exists in the project.
   bool hasSddAi([String? projectDir]) {
     final dir = projectDir ?? Directory.current.path;
     return Directory(p.join(dir, 'sdd-ai')).existsSync();
   }
 
+  /// Loads and parses `.walki/config.yaml`.
+  ///
+  /// Throws [StateError] if the workspace is not initialized.
   WalkiConfig loadConfig([String? projectDir]) {
     final dir = projectDir ?? Directory.current.path;
     final configFile = File(p.join(dir, walkiDir, configFileName));
@@ -39,6 +65,7 @@ class Workspace {
     return WalkiConfig.fromYaml(yaml);
   }
 
+  /// Saves [config] into `.walki/config.yaml`.
   void saveConfig(WalkiConfig config, [String? projectDir]) {
     final dir = projectDir ?? Directory.current.path;
     final configFile = File(p.join(dir, walkiDir, configFileName));
@@ -46,6 +73,7 @@ class Workspace {
     configFile.writeAsStringSync(yamlContent);
   }
 
+  /// Creates a new Walki workspace and returns the absolute workspace path.
   String init({
     String? projectDir,
     String template = 'minimal',

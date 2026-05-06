@@ -1,8 +1,11 @@
 import 'channel.dart';
 
+/// Formats channel models into the canonical Walki markdown representation.
 class ChannelFormatter {
+  /// Creates a [ChannelFormatter].
   const ChannelFormatter();
 
+  /// Formats a complete [Channel] as markdown.
   String format(Channel channel) {
     final buffer = StringBuffer();
 
@@ -92,6 +95,7 @@ class ChannelFormatter {
     return buffer.toString().trimRight() + '\n';
   }
 
+  /// Formats a single message append block.
   String formatAppendMessage(ChannelMessage message) {
     final buffer = StringBuffer();
     buffer.writeln();
@@ -109,6 +113,7 @@ class ChannelFormatter {
     return buffer.toString();
   }
 
+  /// Updates only the metadata status line in raw channel markdown.
   String updateStatus(String content, ChannelStatus newStatus) {
     return content.replaceFirst(
       RegExp(r'- status: \S+'),
@@ -116,6 +121,7 @@ class ChannelFormatter {
     );
   }
 
+  /// Formats a decision block ready to append to a channel file.
   String formatDecision(ChannelDecision decision) {
     final buffer = StringBuffer();
     buffer.writeln('---');
@@ -150,6 +156,7 @@ class ChannelFormatter {
     return buffer.toString();
   }
 
+  /// Produces a compact human-readable status summary.
   String formatStatus(Channel channel) {
     final buffer = StringBuffer();
     buffer.writeln('Channel: ${channel.id}');
