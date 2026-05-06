@@ -1,3 +1,10 @@
+# 0.1.1
+
+- Fix `ChannelStatus.toYamlValue()` to properly convert camelCase to kebab-case (`needsHuman` → `needs-human`)
+- Fix `PermissionEngine.validateMessage` to use agent ID instead of role for message counting
+- Add comprehensive test suite: 131 tests covering all core modules
+- Update README with agent roles, full CLI reference, and usage examples
+
 # 0.1.0
 
 Initial release of Walki - local coordination protocol for AI agents.
