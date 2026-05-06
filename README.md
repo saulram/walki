@@ -22,6 +22,15 @@ Walki gives agents a shared space inside your repo where they can propose, chall
 dart pub global activate walki
 ```
 
+Or build from source:
+
+```bash
+git clone https://github.com/saulram/walki.git
+cd walki
+dart pub get
+dart compile exe bin/walki.dart -o walki
+```
+
 ## Quick start
 
 ```bash
@@ -34,16 +43,25 @@ walki debate auth "How should we implement multi-tenant auth?" \
   --max-turns 8
 
 # Agent sends a message
-walki say codex auth "I propose tenant-scoped JWT claims plus tenant resolver middleware."
+walki say codex auth "I propose tenant-scoped JWT claims plus tenant resolver middleware." --kind proposal
 
 # Another agent responds
-walki say claude auth "I agree with tenant-scoped claims, but middleware alone is insufficient. Repository-level filtering is also needed."
+walki say claude auth "I agree with tenant-scoped claims, but middleware alone is insufficient. Repository-level filtering is also needed." --kind challenge
 
 # Check status
 walki status auth
 
+# Generate structured summary
+walki summarize auth
+
 # Close debate
 walki close auth --status accepted
+
+# Export as JSON
+walki export auth --format json -o auth-debate.json
+
+# Validate workspace integrity
+walki doctor
 
 # Promote to sdd_ai
 walki promote auth --to sdd-ai
@@ -63,9 +81,7 @@ walki promote auth --to sdd-ai
 │   └── human.md           # Human owner role
 ├── rules/
 │   ├── security.md        # Security constraints for agents
-│   ├── code-style.md      # Code style rules
-│   ├── testing.md         # Testing requirements
-│   └── architecture.md    # Architecture rules
+│   └── code-style.md      # Code style rules
 ├── channels/
 │   └── auth.md            # Debate channels (Markdown)
 ├── decisions/
@@ -73,8 +89,7 @@ walki promote auth --to sdd-ai
 ├── tasks/
 │   └── auth.md            # Tasks derived from decisions
 ├── state/
-│   ├── index.yaml         # Generated state index
-│   └── auth.yaml          # Per-channel state
+│   └── index.yaml         # Generated state index
 └── locks/
     └── auth.lock          # Write locks
 ```
@@ -136,6 +151,34 @@ Rationale:
 - Tests must cover cross-tenant access attempts.
 ```
 
+### Agent roles
+
+Walki supports three built-in roles:
+
+| Role | Permissions |
+|------|-------------|
+| **implementer** | read, append, propose_decision, propose_task |
+| **reviewer** | read, append, challenge_decision, propose_decision, propose_task |
+| **owner** (human) | read, append, accept_decision, reject_decision, close_channel, promote_to_sdd |
+
+When you run `walki debate`, Walki generates agent-specific prompts:
+
+```text
+You are codex, the implementation-oriented agent in a Walki debate.
+
+Channel:
+.walki/channels/auth.md
+
+Read the entire channel before writing.
+Append only.
+End your message with OVER.
+Focus on implementation plan, edge cases, migrations, and tests.
+Do not accept final decisions without human confirmation.
+You may propose decisions.
+```
+
+Copy these prompts into your agent sessions (Codex, Claude Code, Gemini CLI, etc.) and let them write to the same channel file.
+
 ### Debate lifecycle
 
 A debate goes through defined states:
@@ -149,22 +192,33 @@ open -> active -> accepted -> promoted
 
 A debate stops when agents agree, disagree clearly, lack context, hit the turn limit, or a human intervenes.
 
+### Protocol permissions
+
+Walki enforces protocol-level permissions when appending messages:
+
+- Implementers can propose but cannot accept final decisions
+- Reviewers can challenge decisions constructively
+- Only the human owner can accept, reject, close, or promote
+- `walki doctor` detects missing OVER markers, unknown agents, and non-monotonic timestamps
+
 ## CLI reference
 
 | Command | Description |
 |---------|-------------|
-| `walki init` | Initialize `.walki/` workspace |
+| `walki init [--agents codex,claude] [--sdd-ai]` | Initialize `.walki/` workspace |
 | `walki agent add <id> --role <role>` | Register an agent |
-| `walki debate <id> "question"` | Create a debate channel |
-| `walki say <agent> <channel> "message"` | Append a message to a channel |
-| `walki read <channel>` | Read channel messages |
+| `walki agent list` | List registered agents |
+| `walki debate <id> "question" [--agents] [--rules] [--max-turns]` | Create a debate channel |
+| `walki say <agent> <channel> "message" [--kind proposal\|challenge\|...]` | Append a message |
+| `walki read <channel> [--tail N]` | Read channel messages |
 | `walki status [channel]` | Show workspace or channel status |
 | `walki summarize <channel>` | Generate structured summary |
-| `walki close <channel> --status <status>` | Close a debate |
-| `walki promote <channel> --to sdd-ai` | Promote decision to sdd_ai |
+| `walki close <channel> --status accepted\|blocked\|...` | Close a debate |
+| `walki promote <channel> --to sdd-ai\|decisions` | Promote decision |
 | `walki doctor` | Validate workspace integrity |
 | `walki rules add <name>` | Create a new rule file |
-| `walki export <channel> --format json` | Export debate |
+| `walki rules list` | List project rules |
+| `walki export <channel> --format markdown\|json [-o file]` | Export debate |
 
 ## Key principles
 
@@ -174,6 +228,7 @@ A debate stops when agents agree, disagree clearly, lack context, hit the turn l
 - **Git-native**: Debates are diffable, reviewable in PRs.
 - **Human-mediated**: Agents propose, humans decide.
 - **Agent-agnostic**: Works with any agent that can read and write files.
+- **Stop conditions explicit**: Every debate has a max turn limit and clear exit conditions.
 
 ## Custom instructions
 
@@ -183,9 +238,11 @@ Walki loads instructions in order of specificity:
 2. Global user instructions (`~/.walki/instructions.md`)
 3. Project instructions (`.walki/instructions.md`)
 4. Domain rules (`.walki/rules/*.md`)
-5. Channel-specific instructions
-6. Agent role
-7. User's current prompt
+5. `sdd-ai/architecture/*.md` (if present)
+6. `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` (if present)
+7. Channel-specific instructions
+8. Agent role
+9. User's current prompt
 
 Create rules for your project:
 
@@ -193,6 +250,20 @@ Create rules for your project:
 walki rules add security
 walki rules add code-style
 walki rules add testing
+```
+
+Example `.walki/rules/security.md`:
+
+```markdown
+# Security Rules
+
+For auth, payments, user data, permissions, or encryption:
+
+- Identify abuse cases.
+- Identify data leakage risks.
+- Require test coverage for negative cases.
+- Never accept a proposal without rollback strategy.
+- Prefer deny-by-default authorization.
 ```
 
 ## Integration with sdd_ai
@@ -215,12 +286,13 @@ Walki debates. sdd_ai canonizes. flg executes.
 
 Walki is a Dart CLI. Core modules:
 
-- **Storage**: Read/write Markdown, manage workspace structure, handle locks
-- **ChannelParser**: Parse Markdown channels, extract metadata, messages, decisions
-- **InstructionLoader**: Load instructions hierarchically, expand globs, deduplicate
-- **PermissionEngine**: Validate actions against protocol permissions
-- **SddAiAdapter**: Detect sdd_ai, create change folders, promote decisions
-- **MCP (future)**: Expose commands as MCP tools for agent-native usage
+- **Config**: WalkiConfig, AgentConfig (YAML de/serialization with role-based permissions)
+- **Channel**: Channel model, ChannelParser, ChannelFormatter (round-trip Markdown)
+- **Storage**: Workspace initialization, `.walki/` structure, config management
+- **Rules**: InstructionLoader (hierarchical, deduplicating, glob-aware)
+- **Validation**: PermissionEngine (protocol-level action validation, channel health checks)
+- **SddAiAdapter**: Detect `sdd-ai/`, create change folders, promote decisions
+- **MCP** (future): Expose commands as MCP tools for agent-native usage
 
 ## Development
 
@@ -228,22 +300,25 @@ Walki is a Dart CLI. Core modules:
 # Install dependencies
 dart pub get
 
-# Run tests
+# Run tests (16 tests)
 dart test
 
-# Run linter
+# Run linter (0 errors expected)
 dart analyze
 
 # Run locally
 dart run bin/walki.dart init --agents codex,claude
+
+# Build binary
+dart compile exe bin/walki.dart -o walki
 ```
 
 ## Roadmap
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 0 | Spike: validate protocol with Markdown files | Planned |
-| 1 | CLI MVP: init, agent, debate, say, read, status, doctor | In progress |
+| 0 | Spike: validate protocol with Markdown files | Done |
+| 1 | CLI MVP: init, agent, debate, say, read, status, close, summarize, doctor, rules, export, promote | **Released v0.1.0** |
 | 2 | sdd_ai integration: debate, promote, change folders | Planned |
 | 3 | MCP server: tools, permission enforcement | Planned |
 | 4 | Skills/prompt packs for agents | Planned |
