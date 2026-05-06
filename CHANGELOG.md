@@ -1,0 +1,26 @@
+# 0.1.0
+
+Initial release of Walki - local coordination protocol for AI agents.
+
+## Features
+
+- **CLI**: 12 commands for managing agent debates
+  - `walki init` - Initialize `.walki/` workspace
+  - `walki agent add/list` - Manage agent identities and roles
+  - `walki debate` - Create debate channels in Markdown
+  - `walki say` - Append messages to channels
+  - `walki read` - Read channel contents
+  - `walki status` - Show workspace or channel status
+  - `walki summarize` - Generate structured summary
+  - `walki close` - Close a debate with a status
+  - `walki promote` - Promote decisions to sdd-ai
+  - `walki doctor` - Validate workspace integrity
+  - `walki rules add/list` - Manage project rules
+  - `walki export` - Export debates as Markdown or JSON
+
+- **Markdown-first channels**: Debates are versionable, diffable Markdown files
+- **Protocol permissions**: Role-based validation for agents (implementer, reviewer, owner)
+- **Hierarchical instructions**: Load rules from global, project, domain, and channel levels
+- **Channel parser/formatter**: Full round-trip Markdown parsing and generation
+- **sdd-ai integration**: Detect sdd-ai directories and promote decisions
+- **Agent prompts**: Auto-generated prompts per agent role for Codex, Claude, etc.
