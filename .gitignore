@@ -6,4 +6,5 @@ pubspec.lock
 *.o
 *.obj
 walki
-walki_mcpcoverage/
+walki_mcp
+coverage/

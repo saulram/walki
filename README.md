@@ -22,6 +22,17 @@ Walki gives agents a shared space inside your repo where they can propose, chall
 dart pub global activate walki
 ```
 
+> **If `walki` command is not found after install**, add the Dart global bin directory to your PATH:
+>
+> ```bash
+> # Add to ~/.zshrc (or ~/.bashrc)
+> export PATH="$PATH":"$HOME/.pub-cache/bin"
+> ```
+>
+> Then reload your shell: `source ~/.zshrc`
+>
+> This happens because `dart pub global activate` installs binaries to `~/.pub-cache/bin`, which is not in the default PATH on most systems.
+
 Or build from source:
 
 ```bash

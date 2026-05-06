@@ -1,0 +1,9 @@
+# Compiled binaries
+walki
+walki_mcp
+
+# Coverage
+coverage/
+
+# Project-specific docs (not for pub.dev)
+CLAUDE.md
