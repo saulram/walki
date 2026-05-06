@@ -1,3 +1,9 @@
+# 0.2.1
+
+- Add PATH setup instructions to README for `dart pub global activate` users
+- Remove compiled binaries and coverage files from package
+- Add `.pubignore` to exclude non-essential files from pub.dev
+
 # 0.2.0
 
 - **MCP server**: Walki is now usable as an MCP tool by any MCP-compatible agent (opencode, Claude Desktop, etc.)
