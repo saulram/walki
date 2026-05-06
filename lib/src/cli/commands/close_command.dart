@@ -68,10 +68,10 @@ class CloseCommand extends Command<int> {
     }
 
     final newStatus = ChannelStatus.fromString(closeStatus);
-    final updatedChannel = channel.copyWith(status: newStatus);
-
     final formatter = const ChannelFormatter();
-    channelFile.writeAsStringSync(formatter.format(updatedChannel));
+    var content = channelFile.readAsStringSync();
+    content = formatter.updateStatus(content, newStatus);
+    channelFile.writeAsStringSync(content);
 
     logger.info(green.wrap('Closed channel: $channelId'));
     logger.info('Status: $closeStatus');

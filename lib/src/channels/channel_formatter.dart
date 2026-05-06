@@ -94,18 +94,26 @@ class ChannelFormatter {
 
   String formatAppendMessage(ChannelMessage message) {
     final buffer = StringBuffer();
-    buffer.writeln('---');
     buffer.writeln();
-    buffer.writeln(
-      '## ${message.timestamp.toUtc().toIso8601String()} - ${message.agent} - ${message.kind.name}',
-    );
+    buffer.writeln('## ${message.timestamp.toUtc().toIso8601String()} - ${message.agent} - ${message.kind.name}');
     buffer.writeln();
     buffer.writeln(message.content);
     buffer.writeln();
-    buffer.writeln('OVER');
+    if (message.endsWithOver) {
+      buffer.writeln('OVER');
+      buffer.writeln();
+    }
+    buffer.writeln('---');
     buffer.writeln();
 
     return buffer.toString();
+  }
+
+  String updateStatus(String content, ChannelStatus newStatus) {
+    return content.replaceFirst(
+      RegExp(r'- status: \S+'),
+      '- status: ${newStatus.toYamlValue()}',
+    );
   }
 
   String formatDecision(ChannelDecision decision) {

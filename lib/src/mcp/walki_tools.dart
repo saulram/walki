@@ -379,23 +379,23 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
     kind: MessageKind.fromString(kind),
     content: message,
     timestamp: DateTime.now(),
-    endsWithOver: config.limits.requireOverMarker,
+    endsWithOver: true,
   );
 
   final formatter = const ChannelFormatter();
-  final updatedChannel = channel.copyWith(
-    status: channel.status == ChannelStatus.open
-        ? ChannelStatus.active
-        : channel.status,
-    messages: [...channel.messages, channelMessage],
-  );
 
-  channelFile.writeAsStringSync(formatter.format(updatedChannel));
+  var content = channelFile.readAsStringSync();
+  if (channel.status == ChannelStatus.open) {
+    content = formatter.updateStatus(content, ChannelStatus.active);
+  }
+  content += formatter.formatAppendMessage(channelMessage);
+  channelFile.writeAsStringSync(content);
 
+  final turnCount = channel.messages.length + 1;
   return CallToolResult(content: [
     TextContent(
         text:
-            'Message appended to channel "$channelId" by $agent ($kind). Turn ${updatedChannel.turnCount}/${channel.maxTurns}.'),
+            'Message appended to channel "$channelId" by $agent ($kind). Turn $turnCount/${channel.maxTurns}.'),
   ]);
 }
 
@@ -541,10 +541,10 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
   }
 
   final newStatus = ChannelStatus.fromString(status);
-  final updatedChannel = channel.copyWith(status: newStatus);
-
   final formatter = const ChannelFormatter();
-  channelFile.writeAsStringSync(formatter.format(updatedChannel));
+  var content = channelFile.readAsStringSync();
+  content = formatter.updateStatus(content, newStatus);
+  channelFile.writeAsStringSync(content);
 
   return CallToolResult(content: [
     TextContent(text: 'Channel "$channelId" closed with status: $status'),

@@ -1,3 +1,10 @@
+# 0.2.2
+
+- Fix messages being lost on append: post/close now use append-only instead of parse-rewrite
+- Fix parser breaking on `## ` Markdown headers inside message content
+- Add `ChannelFormatter.updateStatus()` for in-place status line replacement
+- Preserve original message formatting (whitespace, blank lines)
+
 # 0.2.1
 
 - Add PATH setup instructions to README for `dart pub global activate` users

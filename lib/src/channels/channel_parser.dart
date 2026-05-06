@@ -67,9 +67,17 @@ class ChannelParser {
           var content = StringBuffer();
           var endsWithOver = false;
 
+          final timestampHeaderRegex =
+              RegExp(r'^##\s+\d{4}-\d{2}-\d{2}T');
           for (var j = i + 1; j < lines.length; j++) {
             final msgLine = lines[j].trim();
-            if (msgLine.startsWith('## ') || msgLine.startsWith('---')) {
+            if (msgLine.startsWith('---') ||
+                timestampHeaderRegex.hasMatch(msgLine) ||
+                msgLine.startsWith('## Decision:') ||
+                msgLine == '## Metadata' ||
+                msgLine == '## User Prompt' ||
+                msgLine == '## Working Rules' ||
+                msgLine == '## Loaded Instructions') {
               i = j - 1;
               break;
             }
@@ -77,9 +85,7 @@ class ChannelParser {
               endsWithOver = true;
               continue;
             }
-            if (msgLine.isNotEmpty) {
-              content.writeln(msgLine);
-            }
+            content.writeln(lines[j]);
           }
 
           messages.add(ChannelMessage(

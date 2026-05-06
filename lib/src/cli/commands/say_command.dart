@@ -102,22 +102,22 @@ class SayCommand extends Command<int> {
       kind: MessageKind.fromString(kind),
       content: message,
       timestamp: DateTime.now(),
-      endsWithOver: config.limits.requireOverMarker,
+      endsWithOver: true,
     );
 
     final formatter = const ChannelFormatter();
+    var content = channelFile.readAsStringSync();
+    if (channel.status == ChannelStatus.open) {
+      content = formatter.updateStatus(content, ChannelStatus.active);
+    }
+    content += formatter.formatAppendMessage(channelMessage);
+    channelFile.writeAsStringSync(content);
 
-    final updatedChannel = channel.copyWith(
-      status: channel.status == ChannelStatus.open ? ChannelStatus.active : channel.status,
-      messages: [...channel.messages, channelMessage],
-    );
-
-    channelFile.writeAsStringSync(formatter.format(updatedChannel));
-
+    final turnCount = channel.messages.length + 1;
     logger.info(green.wrap('Message appended to channel "$channelId"'));
     logger.info('  Agent: $agent');
     logger.info('  Kind: $kind');
-    logger.info('  Turn: ${updatedChannel.turnCount}/${channel.maxTurns}');
+    logger.info('  Turn: $turnCount/${channel.maxTurns}');
 
     return 0;
   }
