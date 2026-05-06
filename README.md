@@ -343,22 +343,6 @@ For auth, payments, user data, permissions, or encryption:
 - Prefer deny-by-default authorization.
 ```
 
-## Integration with sdd_ai
-
-When `sdd-ai/` exists in your repo, Walki can promote decisions to canonical architecture and specs:
-
-```bash
-walki promote auth --to sdd-ai
-```
-
-This creates files under `sdd-ai/changes/` and updates `sdd-ai/architecture/` and `sdd-ai/specs/`.
-
-The boundary stays clear:
-
-```
-Walki debates. sdd_ai canonizes. flg executes.
-```
-
 ## Architecture
 
 Walki is a Dart CLI. Core modules:

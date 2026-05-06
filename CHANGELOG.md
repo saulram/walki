@@ -1,3 +1,7 @@
+# 0.3.1
+
+- Docs: remove `Integration with sdd_ai` section from README for a leaner local-first narrative
+
 # 0.3.0
 
 - Add `example/` with a runnable basic debate flow and MCP config sample
