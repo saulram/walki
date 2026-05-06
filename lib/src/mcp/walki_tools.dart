@@ -11,7 +11,8 @@ import '../validation/permission_engine.dart';
 void registerWalkiTools(Server server) {
   server.addTool(
     name: 'walki_open_channel',
-    description: 'Open a new debate channel for agents to deliberate. Creates a Markdown file with metadata, instructions, and working rules. Returns the channel ID and agent prompts.',
+    description:
+        'Open a new debate channel for agents to deliberate. Creates a Markdown file with metadata, instructions, and working rules. Returns the channel ID and agent prompts.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -25,11 +26,13 @@ void registerWalkiTools(Server server) {
         },
         'agents': {
           'type': 'string',
-          'description': 'Comma-separated list of agent names (e.g., "codex,claude")',
+          'description':
+              'Comma-separated list of agent names (e.g., "codex,claude")',
         },
         'rules': {
           'type': 'string',
-          'description': 'Comma-separated list of rule files to load (e.g., "security,testing")',
+          'description':
+              'Comma-separated list of rule files to load (e.g., "security,testing")',
         },
         'max_turns': {
           'type': 'integer',
@@ -43,7 +46,8 @@ void registerWalkiTools(Server server) {
 
   server.addTool(
     name: 'walki_read_channel',
-    description: 'Read the contents of a debate channel. Returns the full Markdown content or a summary of the last N messages.',
+    description:
+        'Read the contents of a debate channel. Returns the full Markdown content or a summary of the last N messages.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -63,7 +67,8 @@ void registerWalkiTools(Server server) {
 
   server.addTool(
     name: 'walki_post_message',
-    description: 'Post a message to a debate channel. The agent reads the channel, then appends a message. Every message ends with the OVER marker by default.',
+    description:
+        'Post a message to a debate channel. The agent reads the channel, then appends a message. Every message ends with the OVER marker by default.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -81,7 +86,18 @@ void registerWalkiTools(Server server) {
         },
         'kind': {
           'type': 'string',
-          'enum': ['proposal', 'challenge', 'question', 'clarification', 'agreement', 'objection', 'decision', 'context', 'summary', 'meta'],
+          'enum': [
+            'proposal',
+            'challenge',
+            'question',
+            'clarification',
+            'agreement',
+            'objection',
+            'decision',
+            'context',
+            'summary',
+            'meta'
+          ],
           'description': 'The kind of message (default: proposal)',
         },
       },
@@ -92,7 +108,8 @@ void registerWalkiTools(Server server) {
 
   server.addTool(
     name: 'walki_propose_decision',
-    description: 'Propose a decision for a debate channel. Records the decision with rationale, risks, and required tests.',
+    description:
+        'Propose a decision for a debate channel. Records the decision with rationale, risks, and required tests.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -120,7 +137,8 @@ void registerWalkiTools(Server server) {
         'required_tests': {
           'type': 'array',
           'items': {'type': 'string'},
-          'description': 'List of tests required before the decision can be accepted',
+          'description':
+              'List of tests required before the decision can be accepted',
         },
       },
       'required': ['channel', 'agent', 'summary'],
@@ -130,13 +148,15 @@ void registerWalkiTools(Server server) {
 
   server.addTool(
     name: 'walki_get_status',
-    description: 'Get the status of a specific channel or overview of all channels in the workspace. Returns status, participants, turn count, and last action.',
+    description:
+        'Get the status of a specific channel or overview of all channels in the workspace. Returns status, participants, turn count, and last action.',
     inputSchema: {
       'type': 'object',
       'properties': {
         'channel': {
           'type': 'string',
-          'description': 'Optional channel ID. If omitted, returns overview of all channels.',
+          'description':
+              'Optional channel ID. If omitted, returns overview of all channels.',
         },
       },
     },
@@ -145,7 +165,8 @@ void registerWalkiTools(Server server) {
 
   server.addTool(
     name: 'walki_close_channel',
-    description: 'Close a debate channel with a specific status (accepted, blocked, needs-human, abandoned). Prevents further messages.',
+    description:
+        'Close a debate channel with a specific status (accepted, blocked, needs-human, abandoned). Prevents further messages.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -155,8 +176,16 @@ void registerWalkiTools(Server server) {
         },
         'status': {
           'type': 'string',
-          'enum': ['accepted', 'blocked', 'needs-human', 'abandoned', 'superseded', 'needs-context'],
-          'description': 'The status to close the channel with (default: accepted)',
+          'enum': [
+            'accepted',
+            'blocked',
+            'needs-human',
+            'abandoned',
+            'superseded',
+            'needs-context'
+          ],
+          'description':
+              'The status to close the channel with (default: accepted)',
         },
       },
       'required': ['channel'],
@@ -166,7 +195,8 @@ void registerWalkiTools(Server server) {
 
   server.addTool(
     name: 'walki_promote_to_sdd',
-    description: 'Promote a channel decision to sdd-ai or a decisions file. Creates change folders and copies the debate artifacts.',
+    description:
+        'Promote a channel decision to sdd-ai or a decisions file. Creates change folders and copies the debate artifacts.',
     inputSchema: {
       'type': 'object',
       'properties': {
@@ -186,7 +216,7 @@ void registerWalkiTools(Server server) {
   );
 }
 
-Future<dynamic> _openChannel(Map<String, dynamic> args) async {
+Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized. Run walki init first.');
@@ -205,7 +235,11 @@ Future<dynamic> _openChannel(Map<String, dynamic> args) async {
   }
 
   final participants = agentsStr.isNotEmpty
-      ? agentsStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+      ? agentsStr
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList()
       : config.agents.keys.where((k) => k != 'human').toList();
 
   final channelFile = File('${config.storage.channelDir}/$id.md');
@@ -246,19 +280,14 @@ Future<dynamic> _openChannel(Map<String, dynamic> args) async {
     }
   }
 
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Channel "$id" created with ${participants.length} participants and $maxTurns max turns.'},
-    ],
-    'channel_id': id,
-    'status': 'open',
-    'participants': participants,
-    'max_turns': maxTurns,
-    'prompts': prompts,
-  };
+  return CallToolResult(content: [
+    TextContent(
+        text:
+            'Channel "$id" created with ${participants.length} participants and $maxTurns max turns.\n\nAgent prompts:\n${prompts.entries.map((e) => '${e.key}:\n${e.value}').join('\n\n')}'),
+  ]);
 }
 
-Future<dynamic> _readChannel(Map<String, dynamic> args) async {
+Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized.');
@@ -289,19 +318,19 @@ Future<dynamic> _readChannel(Map<String, dynamic> args) async {
     result.writeln('Status: ${channel.status.toYamlValue()}');
     result.writeln();
     for (final msg in messages) {
-      result.writeln('${msg.timestamp.toIso8601String()} - ${msg.agent} (${msg.kind.name}):');
+      result.writeln(
+          '${msg.timestamp.toIso8601String()} - ${msg.agent} (${msg.kind.name}):');
       result.writeln(msg.content);
       result.writeln();
     }
-    return {'content': [{'type': 'text', 'text': result.toString()}]};
+    return CallToolResult(content: [TextContent(text: result.toString())]);
   }
 
-  return {
-    'content': [{'type': 'text', 'text': channelFile.readAsStringSync()}],
-  };
+  return CallToolResult(
+      content: [TextContent(text: channelFile.readAsStringSync())]);
 }
 
-Future<dynamic> _postMessage(Map<String, dynamic> args) async {
+Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized.');
@@ -355,24 +384,22 @@ Future<dynamic> _postMessage(Map<String, dynamic> args) async {
 
   final formatter = const ChannelFormatter();
   final updatedChannel = channel.copyWith(
-    status: channel.status == ChannelStatus.open ? ChannelStatus.active : channel.status,
+    status: channel.status == ChannelStatus.open
+        ? ChannelStatus.active
+        : channel.status,
     messages: [...channel.messages, channelMessage],
   );
 
   channelFile.writeAsStringSync(formatter.format(updatedChannel));
 
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Message appended to channel "$channelId" by $agent ($kind). Turn ${updatedChannel.turnCount}/${channel.maxTurns}.'},
-    ],
-    'channel_id': channelId,
-    'agent': agent,
-    'kind': kind,
-    'turn': updatedChannel.turnCount,
-  };
+  return CallToolResult(content: [
+    TextContent(
+        text:
+            'Message appended to channel "$channelId" by $agent ($kind). Turn ${updatedChannel.turnCount}/${channel.maxTurns}.'),
+  ]);
 }
 
-Future<dynamic> _proposeDecision(Map<String, dynamic> args) async {
+Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized.');
@@ -382,8 +409,10 @@ Future<dynamic> _proposeDecision(Map<String, dynamic> args) async {
   final agent = args['agent'] as String;
   final summary = args['summary'] as String;
   final rationale = args['rationale'] as String? ?? '';
-  final risks = (args['risks'] as List<dynamic>?)?.cast<String>().toList() ?? [];
-  final requiredTests = (args['required_tests'] as List<dynamic>?)?.cast<String>().toList() ?? [];
+  final risks =
+      (args['risks'] as List<dynamic>?)?.cast<String>().toList() ?? [];
+  final requiredTests =
+      (args['required_tests'] as List<dynamic>?)?.cast<String>().toList() ?? [];
 
   WalkiConfig config;
   try {
@@ -418,16 +447,13 @@ Future<dynamic> _proposeDecision(Map<String, dynamic> args) async {
   final updatedContent = channelFile.readAsStringSync() + decisionBlock;
   channelFile.writeAsStringSync(updatedContent);
 
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Decision proposed in channel "$channelId" by $agent: $summary'},
-    ],
-    'channel_id': channelId,
-    'decision_status': 'proposed',
-  };
+  return CallToolResult(content: [
+    TextContent(
+        text: 'Decision proposed in channel "$channelId" by $agent: $summary'),
+  ]);
 }
 
-Future<dynamic> _getStatus(Map<String, dynamic> args) async {
+Future<CallToolResult> _getStatus(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized.');
@@ -453,45 +479,40 @@ Future<dynamic> _getStatus(Map<String, dynamic> args) async {
     final parser = const ChannelParser();
     final channel = parser.parse(channelFile.readAsStringSync());
 
-    return {
-      'content': [
-        {'type': 'text', 'text': formatter.formatStatus(channel)},
-      ],
-      'id': channel.id,
-      'status': channel.status.toYamlValue(),
-      'turns': channel.turnCount,
-      'max_turns': channel.maxTurns,
-      'participants': channel.participants,
-    };
+    return CallToolResult(content: [
+      TextContent(text: formatter.formatStatus(channel)),
+    ]);
   }
 
   final channelsDir = Directory(config.storage.channelDir);
-  final channels = <Map<String, dynamic>>[];
+  final channelSummaries = <String>[];
 
   if (channelsDir.existsSync()) {
-    for (final file in channelsDir.listSync().whereType<File>().where((f) => f.path.endsWith('.md'))) {
+    for (final file in channelsDir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.md'))) {
       final parser = const ChannelParser();
       final channel = parser.parse(file.readAsStringSync());
-      channels.add({
-        'id': channel.id,
-        'status': channel.status.toYamlValue(),
-        'turns': channel.turnCount,
-        'max_turns': channel.maxTurns,
-        'participants': channel.participants,
-      });
+      channelSummaries.add(
+          '- ${channel.id}: ${channel.status.toYamlValue()} (${channel.turnCount}/${channel.maxTurns} turns) — ${channel.participants.join(", ")}');
     }
   }
 
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Project: ${config.project.name}\nChannels: ${channels.length}'},
-    ],
-    'channels': channels,
-    'sdd_ai_enabled': config.sddAi.enabled,
-  };
+  final result = StringBuffer();
+  result.writeln('Project: ${config.project.name}');
+  result.writeln('Channels: ${channelSummaries.length}');
+  if (channelSummaries.isNotEmpty) {
+    result.writeln();
+    for (final s in channelSummaries) {
+      result.writeln(s);
+    }
+  }
+
+  return CallToolResult(content: [TextContent(text: result.toString())]);
 }
 
-Future<dynamic> _closeChannel(Map<String, dynamic> args) async {
+Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized.');
@@ -525,16 +546,12 @@ Future<dynamic> _closeChannel(Map<String, dynamic> args) async {
   final formatter = const ChannelFormatter();
   channelFile.writeAsStringSync(formatter.format(updatedChannel));
 
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Channel "$channelId" closed with status: $status'},
-    ],
-    'channel_id': channelId,
-    'status': status,
-  };
+  return CallToolResult(content: [
+    TextContent(text: 'Channel "$channelId" closed with status: $status'),
+  ]);
 }
 
-Future<dynamic> _promoteToSdd(Map<String, dynamic> args) async {
+Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
   final workspace = const Workspace();
   if (!workspace.isInitialized()) {
     return _error('Walki workspace not initialized.');
@@ -552,18 +569,16 @@ Future<dynamic> _promoteToSdd(Map<String, dynamic> args) async {
 
   if (target == 'sdd-ai') {
     if (!workspace.hasSddAi()) {
-      return _error('sdd-ai directory not found. Enable sdd-ai integration or use target "decisions".');
+      return _error(
+          'sdd-ai directory not found. Enable sdd-ai integration or use target "decisions".');
     }
 
     final adapter = const SddAiAdapter();
     try {
       final changeDir = adapter.promoteDecision(channelId, config);
-      return {
-        'content': [
-          {'type': 'text', 'text': 'Decision promoted to sdd-ai: $changeDir'},
-        ],
-        'change_dir': changeDir,
-      };
+      return CallToolResult(content: [
+        TextContent(text: 'Decision promoted to sdd-ai: $changeDir'),
+      ]);
     } catch (e) {
       return _error('Failed to promote: $e');
     }
@@ -579,12 +594,9 @@ Future<dynamic> _promoteToSdd(Map<String, dynamic> args) async {
   decisionFile.parent.createSync(recursive: true);
   decisionFile.writeAsStringSync(channelFile.readAsStringSync());
 
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Decision promoted to: ${decisionFile.path}'},
-    ],
-    'path': decisionFile.path,
-  };
+  return CallToolResult(content: [
+    TextContent(text: 'Decision promoted to: ${decisionFile.path}'),
+  ]);
 }
 
 String _generateAgentPrompt(String agentId, String role, String channelId) {
@@ -608,11 +620,9 @@ String _generateAgentPrompt(String agentId, String role, String channelId) {
       'You may propose decisions.\n';
 }
 
-Map<String, dynamic> _error(String message) {
-  return {
-    'content': [
-      {'type': 'text', 'text': 'Error: $message'},
-    ],
-    'isError': true,
-  };
+CallToolResult _error(String message) {
+  return CallToolResult(
+    content: [TextContent(text: 'Error: $message')],
+    isError: true,
+  );
 }
