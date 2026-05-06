@@ -11,8 +11,9 @@ class PermissionEngine {
   List<String> validateMessage(
     AgentConfig agent,
     Channel channel,
-    String action,
-  ) {
+    String action, {
+    String? agentId,
+  }) {
     final violations = <String>[];
 
     if (!canPerformAction(agent, action)) {
@@ -27,11 +28,12 @@ class PermissionEngine {
       );
     }
 
+    final effectiveAgentId = agentId ?? agent.role;
     final agentMessageCount =
-        channel.messages.where((m) => m.agent == agent.role).length;
+        channel.messages.where((m) => m.agent == effectiveAgentId).length;
     if (agentMessageCount >= 4) {
       violations.add(
-        'Agent "${agent.role}" has reached the maximum message count in this channel.',
+        'Agent "$effectiveAgentId" has reached the maximum message count in this channel.',
       );
     }
 

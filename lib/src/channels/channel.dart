@@ -28,7 +28,7 @@ enum ChannelStatus {
     );
   }
 
-  String toYamlValue() => name.replaceAll('_', '-');
+  String toYamlValue() => _camelToKebab(name);
 }
 
 enum MessageKind {
