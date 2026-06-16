@@ -20,22 +20,67 @@ void main() {
       workspace.init(projectDir: tempDir, agentNames: ['codex', 'claude']);
 
       expect(Directory(p.join(tempDir, '.walki')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'agents')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'rules')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'channels')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'decisions')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'tasks')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'state')).existsSync(), isTrue);
-      expect(Directory(p.join(tempDir, '.walki', 'locks')).existsSync(), isTrue);
+      expect(
+        Directory(p.join(tempDir, '.walki', 'agents')).existsSync(),
+        isTrue,
+      );
+      expect(
+        Directory(p.join(tempDir, '.walki', 'rules')).existsSync(),
+        isTrue,
+      );
+      expect(
+        Directory(p.join(tempDir, '.walki', 'channels')).existsSync(),
+        isTrue,
+      );
+      expect(
+        Directory(p.join(tempDir, '.walki', 'decisions')).existsSync(),
+        isTrue,
+      );
+      expect(
+        Directory(p.join(tempDir, '.walki', 'tasks')).existsSync(),
+        isTrue,
+      );
+      expect(
+        Directory(p.join(tempDir, '.walki', 'state')).existsSync(),
+        isTrue,
+      );
+      expect(
+        Directory(p.join(tempDir, '.walki', 'locks')).existsSync(),
+        isTrue,
+      );
 
-      expect(File(p.join(tempDir, '.walki', 'config.yaml')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'instructions.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'agents', 'codex.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'agents', 'claude.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'agents', 'human.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'rules', 'security.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'rules', 'code-style.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'state', 'index.yaml')).existsSync(), isTrue);
+      expect(
+        File(p.join(tempDir, '.walki', 'config.yaml')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'instructions.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'agents', 'codex.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'agents', 'claude.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'agents', 'human.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'rules', 'security.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'rules', 'code-style.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'state', 'index.yaml')).existsSync(),
+        isTrue,
+      );
     });
 
     test('init with custom agent names', () {
@@ -46,8 +91,14 @@ void main() {
       expect(config.agents, contains('gemini'));
       expect(config.agents, contains('devon'));
       expect(config.agents, contains('human'));
-      expect(File(p.join(tempDir, '.walki', 'agents', 'gemini.md')).existsSync(), isTrue);
-      expect(File(p.join(tempDir, '.walki', 'agents', 'devon.md')).existsSync(), isTrue);
+      expect(
+        File(p.join(tempDir, '.walki', 'agents', 'gemini.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'agents', 'devon.md')).existsSync(),
+        isTrue,
+      );
     });
 
     test('init throws if already initialized', () {
@@ -116,11 +167,68 @@ void main() {
       expect(config.sddAi.enabled, isTrue);
     });
 
+    test('init with sdd template enables sdd-ai integration', () {
+      final workspace = const Workspace();
+      workspace
+          .init(projectDir: tempDir, template: 'sdd', agentNames: ['codex']);
+
+      final config = workspace.loadConfig(tempDir);
+      expect(config.sddAi.enabled, isTrue);
+    });
+
+    test('init with custom agent configs writes configured metadata', () {
+      final workspace = const Workspace();
+      workspace.init(
+        projectDir: tempDir,
+        agentConfigs: {
+          'opencode':
+              AgentConfig.implementer(description: 'Repository implementer'),
+          'gemini': AgentConfig.reviewer(description: 'Planning reviewer'),
+        },
+      );
+
+      final config = workspace.loadConfig(tempDir);
+      expect(
+        config.agents['opencode']!.description,
+        equals('Repository implementer'),
+      );
+      expect(config.agents['gemini']!.role, equals('reviewer'));
+
+      final opencodeFile =
+          File(p.join(tempDir, '.walki', 'agents', 'opencode.md'))
+              .readAsStringSync();
+      expect(opencodeFile, contains('Repository implementer'));
+      expect(opencodeFile, contains('## Debate Prompt'));
+    });
+
+    test('init with starter rules controls generated rules', () {
+      final workspace = const Workspace();
+      workspace.init(
+        projectDir: tempDir,
+        agentNames: ['codex'],
+        starterRules: ['testing', 'sdd-ai'],
+      );
+
+      expect(
+        File(p.join(tempDir, '.walki', 'rules', 'testing.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'rules', 'sdd-ai.md')).existsSync(),
+        isTrue,
+      );
+      expect(
+        File(p.join(tempDir, '.walki', 'rules', 'security.md')).existsSync(),
+        isFalse,
+      );
+    });
+
     test('init creates instructions.md with content', () {
       final workspace = const Workspace();
       workspace.init(projectDir: tempDir, agentNames: ['codex']);
 
-      final content = File(p.join(tempDir, '.walki', 'instructions.md')).readAsStringSync();
+      final content =
+          File(p.join(tempDir, '.walki', 'instructions.md')).readAsStringSync();
       expect(content, contains('simple architecture'));
       expect(content, contains('risks'));
       expect(content, contains('tests'));
@@ -130,7 +238,8 @@ void main() {
       final workspace = const Workspace();
       workspace.init(projectDir: tempDir, agentNames: ['codex']);
 
-      final content = File(p.join(tempDir, '.walki', 'rules', 'security.md')).readAsStringSync();
+      final content = File(p.join(tempDir, '.walki', 'rules', 'security.md'))
+          .readAsStringSync();
       expect(content, contains('Security Rules'));
       expect(content, contains('abuse cases'));
       expect(content, contains('deny-by-default'));
@@ -140,7 +249,8 @@ void main() {
       final workspace = const Workspace();
       workspace.init(projectDir: tempDir, agentNames: ['codex']);
 
-      final content = File(p.join(tempDir, '.walki', 'rules', 'code-style.md')).readAsStringSync();
+      final content = File(p.join(tempDir, '.walki', 'rules', 'code-style.md'))
+          .readAsStringSync();
       expect(content, contains('Code Style Rules'));
       expect(content, contains('small modules'));
     });
@@ -149,10 +259,12 @@ void main() {
       final workspace = const Workspace();
       workspace.init(projectDir: tempDir, agentNames: ['codex']);
 
-      final codexContent = File(p.join(tempDir, '.walki', 'agents', 'codex.md')).readAsStringSync();
+      final codexContent = File(p.join(tempDir, '.walki', 'agents', 'codex.md'))
+          .readAsStringSync();
       expect(codexContent, contains('implementer'));
 
-      final humanContent = File(p.join(tempDir, '.walki', 'agents', 'human.md')).readAsStringSync();
+      final humanContent = File(p.join(tempDir, '.walki', 'agents', 'human.md'))
+          .readAsStringSync();
       expect(humanContent, contains('owner'));
     });
   });

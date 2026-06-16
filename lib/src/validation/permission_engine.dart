@@ -58,9 +58,8 @@ class PermissionEngine {
   List<String> validateChannelHealth(Channel channel) {
     final issues = <String>[];
 
-    final messagesWithoutOver = channel.messages
-        .where((m) => !m.endsWithOver)
-        .toList();
+    final messagesWithoutOver =
+        channel.messages.where((m) => !m.endsWithOver).toList();
     if (messagesWithoutOver.isNotEmpty) {
       for (final msg in messagesWithoutOver) {
         issues.add(

@@ -33,6 +33,19 @@ class AgentConfig {
       };
 
   /// Default permissions for implementation-focused agents.
+  AgentConfig copyWith({
+    String? role,
+    String? description,
+    List<String>? can,
+  }) {
+    return AgentConfig(
+      role: role ?? this.role,
+      description: description ?? this.description,
+      can: can ?? this.can,
+    );
+  }
+
+  /// Default permissions for implementation-focused agents.
   static AgentConfig implementer({String description = ''}) {
     return AgentConfig(
       role: 'implementer',
@@ -57,9 +70,10 @@ class AgentConfig {
   }
 
   /// Default permissions for the human owner role.
-  static AgentConfig owner() {
-    return const AgentConfig(
+  static AgentConfig owner({String description = ''}) {
+    return AgentConfig(
       role: 'owner',
+      description: description,
       can: [
         'read',
         'append',
@@ -69,5 +83,19 @@ class AgentConfig {
         'promote_to_sdd',
       ],
     );
+  }
+
+  /// Builds a default agent config for a known role.
+  static AgentConfig forRole(String role, {String description = ''}) {
+    return switch (role) {
+      'implementer' => AgentConfig.implementer(description: description),
+      'reviewer' => AgentConfig.reviewer(description: description),
+      'owner' => AgentConfig.owner(description: description),
+      _ => AgentConfig(
+          role: role,
+          description: description,
+          can: ['read', 'append', 'propose_decision', 'propose_task'],
+        ),
+    };
   }
 }

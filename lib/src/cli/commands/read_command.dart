@@ -27,7 +27,8 @@ class ReadCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -59,14 +60,20 @@ class ReadCommand extends Command<int> {
     final tailStr = argResults?['tail'] as String?;
     final tail = tailStr != null ? int.tryParse(tailStr) : null;
 
-    if (tail != null && tail < channel.messages.length) {
+    if (tail != null && tail <= 0) {
+      logger.err('--tail must be greater than zero.');
+      return 1;
+    }
+
+    if (tail != null) {
       final messages = channel.messages.reversed.take(tail).toList().reversed;
       logger.info('Channel: ${channel.id} (last $tail messages)');
       logger.info('Status: ${channel.status.toYamlValue()}');
       logger.info('');
       for (final msg in messages) {
         final kindLabel = msg.kind.name;
-        logger.info('${cyan.wrap(msg.timestamp.toIso8601String())} - ${green.wrap(msg.agent)} - $kindLabel');
+        logger.info(
+            '${cyan.wrap(msg.timestamp.toIso8601String())} - ${green.wrap(msg.agent)} - $kindLabel');
         logger.info(msg.content);
         logger.info('');
       }

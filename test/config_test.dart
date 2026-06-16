@@ -4,7 +4,10 @@ import 'package:walki/walki.dart';
 void main() {
   group('WalkiConfig', () {
     test('fromYaml creates config with all defaults', () {
-      final yaml = <dynamic, dynamic>{'version': 1, 'project': {'name': 'test'}};
+      final yaml = <dynamic, dynamic>{
+        'version': 1,
+        'project': {'name': 'test'},
+      };
       final config = WalkiConfig.fromYaml(yaml);
       expect(config.version, equals(1));
       expect(config.project.name, equals('test'));
@@ -84,7 +87,10 @@ void main() {
       expect(config.project.name, equals('my-project'));
       expect(config.agents, contains('codex'));
       expect(config.agents['codex']!.role, equals('implementer'));
-      expect(config.agents['codex']!.description, equals('Implementation agent'));
+      expect(
+        config.agents['codex']!.description,
+        equals('Implementation agent'),
+      );
       expect(config.agents['codex']!.can, contains('propose_decision'));
       expect(config.agents, contains('claude'));
       expect(config.agents['claude']!.role, equals('reviewer'));

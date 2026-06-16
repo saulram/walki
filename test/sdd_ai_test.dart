@@ -56,7 +56,8 @@ void main() {
 
       final changeDir = adapter.createChangeFolder('auth', tempDir);
 
-      final proposal = File(p.join(changeDir, 'proposal.md')).readAsStringSync();
+      final proposal =
+          File(p.join(changeDir, 'proposal.md')).readAsStringSync();
       expect(proposal, contains('# Proposal'));
     });
 
@@ -72,11 +73,15 @@ void main() {
 
     test('promoteDecision copies channel and decision files', () {
       Directory(p.join(tempDir, 'sdd-ai')).createSync(recursive: true);
-      Directory(p.join(tempDir, '.walki', 'channels')).createSync(recursive: true);
-      Directory(p.join(tempDir, '.walki', 'decisions')).createSync(recursive: true);
+      Directory(p.join(tempDir, '.walki', 'channels'))
+          .createSync(recursive: true);
+      Directory(p.join(tempDir, '.walki', 'decisions'))
+          .createSync(recursive: true);
 
-      File(p.join(tempDir, '.walki', 'channels', 'auth.md')).writeAsStringSync('# Walki Channel: auth\n\nDebate content');
-      File(p.join(tempDir, '.walki', 'decisions', 'auth.md')).writeAsStringSync('# Decision: auth\n\nDecision content');
+      File(p.join(tempDir, '.walki', 'channels', 'auth.md'))
+          .writeAsStringSync('# Walki Channel: auth\n\nDebate content');
+      File(p.join(tempDir, '.walki', 'decisions', 'auth.md'))
+          .writeAsStringSync('# Decision: auth\n\nDecision content');
 
       const adapter = SddAiAdapter();
       const config = WalkiConfig(project: ProjectConfig(name: 'test'));
@@ -84,10 +89,12 @@ void main() {
       final changeDir = adapter.promoteDecision('auth', config, tempDir);
 
       expect(Directory(changeDir).existsSync(), isTrue);
-      final walkiContent = File(p.join(changeDir, 'walki.md')).readAsStringSync();
+      final walkiContent =
+          File(p.join(changeDir, 'walki.md')).readAsStringSync();
       expect(walkiContent, contains('Debate content'));
 
-      final decisionsContent = File(p.join(changeDir, 'decisions.md')).readAsStringSync();
+      final decisionsContent =
+          File(p.join(changeDir, 'decisions.md')).readAsStringSync();
       expect(decisionsContent, contains('Decision content'));
     });
   });

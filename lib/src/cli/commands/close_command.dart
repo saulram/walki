@@ -6,15 +6,30 @@ import '../../channels/channel_formatter.dart';
 import '../../channels/channel_parser.dart';
 import '../../config/walki_config.dart';
 import '../../storage/workspace.dart';
+import '../../validation/permission_engine.dart';
 
 class CloseCommand extends Command<int> {
   CloseCommand({required this.logger}) {
     argParser.addOption(
       'status',
       abbr: 's',
-      help: 'Close status: accepted, blocked, needs-human, abandoned, superseded',
+      help:
+          'Close status: accepted, blocked, needs-human, abandoned, superseded',
       defaultsTo: 'accepted',
-      allowed: ['accepted', 'blocked', 'needs-human', 'abandoned', 'superseded', 'needs-context'],
+      allowed: [
+        'accepted',
+        'blocked',
+        'needs-human',
+        'abandoned',
+        'superseded',
+        'needs-context'
+      ],
+    );
+    argParser.addOption(
+      'agent',
+      abbr: 'a',
+      help: 'Agent requesting the close action (defaults to human)',
+      defaultsTo: 'human',
     );
   }
 
@@ -31,7 +46,8 @@ class CloseCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -42,6 +58,7 @@ class CloseCommand extends Command<int> {
     }
 
     final closeStatus = argResults?['status'] as String? ?? 'accepted';
+    final agent = argResults?['agent'] as String? ?? 'human';
 
     WalkiConfig config;
     try {
@@ -67,6 +84,18 @@ class CloseCommand extends Command<int> {
       return 1;
     }
 
+    final agentConfig = config.agents[agent];
+    if (agentConfig == null) {
+      logger.err(
+          'Unknown agent "$agent". Registered agents: ${config.agents.keys.join(', ')}');
+      return 1;
+    }
+    final permissionEngine = const PermissionEngine();
+    if (!permissionEngine.canPerformAction(agentConfig, 'close_channel')) {
+      logger.err('Agent "$agent" cannot perform action "close_channel".');
+      return 1;
+    }
+
     final newStatus = ChannelStatus.fromString(closeStatus);
     final formatter = const ChannelFormatter();
     var content = channelFile.readAsStringSync();
@@ -80,12 +109,14 @@ class CloseCommand extends Command<int> {
       final lastDecision = channel.decisions.last;
       logger.info('Decision recorded: ${lastDecision.summary}');
       logger.info('');
-      logger.info('Tasks proposed: ${channel.messages.where((m) => m.kind == MessageKind.proposal).length}');
+      logger.info(
+          'Tasks proposed: ${channel.messages.where((m) => m.kind == MessageKind.proposal).length}');
     }
 
     if (closeStatus == 'accepted') {
       logger.info('');
-      logger.info('Promotion available: ${lightCyan.wrap('walki promote $channelId --to sdd-ai')}');
+      logger.info(
+          'Promotion available: ${lightCyan.wrap('walki promote $channelId --to sdd-ai')}');
     }
 
     return 0;

@@ -22,7 +22,8 @@ class StatusCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -69,7 +70,9 @@ class StatusCommand extends Command<int> {
           final parser = const ChannelParser();
           for (final file in channelFiles) {
             final channel = parser.parse(file.readAsStringSync());
-            final statusIcon = channel.isOpen ? green.wrap('open') : yellow.wrap(channel.status.toYamlValue());
+            final statusIcon = channel.isOpen
+                ? green.wrap('open')
+                : yellow.wrap(channel.status.toYamlValue());
             logger.info(
               '  ${channel.id}: $statusIcon (${channel.turnCount}/${channel.maxTurns} turns)',
             );

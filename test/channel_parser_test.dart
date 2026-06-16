@@ -177,14 +177,31 @@ Required tests:
 
       expect(channel.decisions.length, equals(1));
       expect(channel.decisions[0].status, equals('accepted'));
-      expect(channel.decisions[0].summary, contains('tenant-scoped JWT claims'));
-      expect(channel.decisions[0].rationale, contains('Middleware provides request context'));
+      expect(
+        channel.decisions[0].summary,
+        contains('tenant-scoped JWT claims'),
+      );
+      expect(
+        channel.decisions[0].rationale,
+        contains('Middleware provides request context'),
+      );
       expect(channel.decisions[0].risks.length, equals(2));
       expect(channel.decisions[0].requiredTests.length, equals(2));
     });
 
     test('parses all channel statuses', () {
-      for (final status in ['open', 'active', 'accepted', 'blocked', 'needs-human', 'needs-context', 'abandoned', 'superseded', 'promoted', 'closed']) {
+      for (final status in [
+        'open',
+        'active',
+        'accepted',
+        'blocked',
+        'needs-human',
+        'needs-context',
+        'abandoned',
+        'superseded',
+        'promoted',
+        'closed',
+      ]) {
         final channel = parser.parse('''
 # Walki Channel: test
 
@@ -203,7 +220,18 @@ Required tests:
     });
 
     test('parses all message kinds', () {
-      final kinds = ['proposal', 'challenge', 'question', 'clarification', 'agreement', 'objection', 'decision', 'context', 'summary', 'meta'];
+      final kinds = [
+        'proposal',
+        'challenge',
+        'question',
+        'clarification',
+        'agreement',
+        'objection',
+        'decision',
+        'context',
+        'summary',
+        'meta',
+      ];
       for (final kind in kinds) {
         final channel = parser.parse('''
 # Walki Channel: test
@@ -256,7 +284,9 @@ Message without OVER marker.
     });
 
     test('handles empty channel', () {
-      final channel = parser.parse('# Walki Channel: empty\n\n## Metadata\n\n- id: empty\n- status: open\n- created_at: 2026-05-06T10:15:00Z\n- participants: codex\n- max_turns: 8\n\n---\n');
+      final channel = parser.parse(
+        '# Walki Channel: empty\n\n## Metadata\n\n- id: empty\n- status: open\n- created_at: 2026-05-06T10:15:00Z\n- participants: codex\n- max_turns: 8\n\n---\n',
+      );
       expect(channel.id, equals('empty'));
       expect(channel.messages, isEmpty);
       expect(channel.decisions, isEmpty);
@@ -313,7 +343,12 @@ Message without OVER marker.
         createdAt: DateTime(2026, 5, 6),
         participants: ['codex', 'claude'],
         messages: [
-          ChannelMessage(agent: 'claude', kind: MessageKind.challenge, content: 'Test', timestamp: DateTime(2026, 5, 6)),
+          ChannelMessage(
+            agent: 'claude',
+            kind: MessageKind.challenge,
+            content: 'Test',
+            timestamp: DateTime(2026, 5, 6),
+          ),
         ],
         maxTurns: 8,
       );
@@ -331,7 +366,11 @@ Message without OVER marker.
         createdAt: DateTime(2026, 5, 6),
         participants: ['codex'],
         decisions: [
-          ChannelDecision(status: 'accepted', summary: 'Use JWT claims', rationale: 'Secure'),
+          ChannelDecision(
+            status: 'accepted',
+            summary: 'Use JWT claims',
+            rationale: 'Secure',
+          ),
         ],
         maxTurns: 8,
       );
@@ -392,8 +431,18 @@ Message without OVER marker.
         loadedInstructions: ['.walki/rules/security.md'],
         workingRules: ['Read before writing.', 'Append only.'],
         messages: [
-          ChannelMessage(agent: 'codex', kind: MessageKind.proposal, content: 'Proposal text', timestamp: DateTime(2026, 5, 6, 10, 20)),
-          ChannelMessage(agent: 'claude', kind: MessageKind.challenge, content: 'Challenge text', timestamp: DateTime(2026, 5, 6, 10, 25)),
+          ChannelMessage(
+            agent: 'codex',
+            kind: MessageKind.proposal,
+            content: 'Proposal text',
+            timestamp: DateTime(2026, 5, 6, 10, 20),
+          ),
+          ChannelMessage(
+            agent: 'claude',
+            kind: MessageKind.challenge,
+            content: 'Challenge text',
+            timestamp: DateTime(2026, 5, 6, 10, 25),
+          ),
         ],
         maxTurns: 8,
       );

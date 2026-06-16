@@ -39,7 +39,9 @@ void main() {
       expect(engine.canPerformAction(owner, 'promote_to_sdd'), isTrue);
     });
 
-    test('validateMessage returns no violations for valid message on open channel', () {
+    test(
+        'validateMessage returns no violations for valid message on open channel',
+        () {
       final impl = AgentConfig.implementer();
       final channel = Channel(
         id: 'test',
@@ -71,38 +73,52 @@ void main() {
         createdAt: DateTime(2026),
         participants: ['codex'],
       );
-      final violations = engine.validateMessage(impl, channel, 'accept_decision');
+      final violations =
+          engine.validateMessage(impl, channel, 'accept_decision');
       expect(violations.any((v) => v.contains('cannot perform')), isTrue);
     });
 
-    test('validateMessage detects max messages per agent exceeded', () {
-      final impl = AgentConfig.implementer();
-      final messages = List.generate(4, (i) => ChannelMessage(
-        agent: 'codex',
-        kind: MessageKind.proposal,
-        content: 'msg $i',
-        timestamp: DateTime(2026, 5, 6, 10, i + 1),
-      ),);
-      final channel = Channel(
-        id: 'test',
-        status: ChannelStatus.active,
-        createdAt: DateTime(2026),
-        participants: ['codex'],
-        messages: messages,
-        maxTurns: 20,
-      );
-      final violations = engine.validateMessage(impl, channel, 'append', agentId: 'codex');
-      expect(violations.any((v) => v.contains('maximum message count')), isTrue);
-    },);
+    test(
+      'validateMessage detects max messages per agent exceeded',
+      () {
+        final impl = AgentConfig.implementer();
+        final messages = List.generate(
+          4,
+          (i) => ChannelMessage(
+            agent: 'codex',
+            kind: MessageKind.proposal,
+            content: 'msg $i',
+            timestamp: DateTime(2026, 5, 6, 10, i + 1),
+          ),
+        );
+        final channel = Channel(
+          id: 'test',
+          status: ChannelStatus.active,
+          createdAt: DateTime(2026),
+          participants: ['codex'],
+          messages: messages,
+          maxTurns: 20,
+        );
+        final violations =
+            engine.validateMessage(impl, channel, 'append', agentId: 'codex');
+        expect(
+          violations.any((v) => v.contains('maximum message count')),
+          isTrue,
+        );
+      },
+    );
 
     test('validateMessage detects max turns exceeded', () {
       final impl = AgentConfig.implementer();
-      final messages = List.generate(8, (i) => ChannelMessage(
-        agent: i.isEven ? 'codex' : 'claude',
-        kind: MessageKind.proposal,
-        content: 'msg $i',
-        timestamp: DateTime(2026, 5, 6, 10, i + 1),
-      ),);
+      final messages = List.generate(
+        8,
+        (i) => ChannelMessage(
+          agent: i.isEven ? 'codex' : 'claude',
+          kind: MessageKind.proposal,
+          content: 'msg $i',
+          timestamp: DateTime(2026, 5, 6, 10, i + 1),
+        ),
+      );
       final channel = Channel(
         id: 'test',
         status: ChannelStatus.active,
@@ -122,7 +138,13 @@ void main() {
         createdAt: DateTime(2026),
         participants: ['codex'],
         messages: [
-          ChannelMessage(agent: 'codex', kind: MessageKind.proposal, content: 'No OVER', timestamp: DateTime(2026), endsWithOver: false),
+          ChannelMessage(
+            agent: 'codex',
+            kind: MessageKind.proposal,
+            content: 'No OVER',
+            timestamp: DateTime(2026),
+            endsWithOver: false,
+          ),
         ],
       );
       final issues = engine.validateChannelHealth(channel);
@@ -136,7 +158,13 @@ void main() {
         createdAt: DateTime(2026),
         participants: ['codex'],
         messages: [
-          ChannelMessage(agent: 'codex', kind: MessageKind.proposal, content: 'Has OVER', timestamp: DateTime(2026), endsWithOver: true),
+          ChannelMessage(
+            agent: 'codex',
+            kind: MessageKind.proposal,
+            content: 'Has OVER',
+            timestamp: DateTime(2026),
+            endsWithOver: true,
+          ),
         ],
       );
       final issues = engine.validateChannelHealth(channel);
@@ -150,7 +178,12 @@ void main() {
         createdAt: DateTime(2026),
         participants: ['codex'],
         messages: [
-          ChannelMessage(agent: 'unknown_agent', kind: MessageKind.proposal, content: 'Test', timestamp: DateTime(2026)),
+          ChannelMessage(
+            agent: 'unknown_agent',
+            kind: MessageKind.proposal,
+            content: 'Test',
+            timestamp: DateTime(2026),
+          ),
         ],
       );
       final issues = engine.validateChannelHealth(channel);
@@ -164,8 +197,18 @@ void main() {
         createdAt: DateTime(2026),
         participants: ['codex', 'claude'],
         messages: [
-          ChannelMessage(agent: 'codex', kind: MessageKind.proposal, content: 'Test', timestamp: DateTime(2026, 5, 6, 10, 0)),
-          ChannelMessage(agent: 'claude', kind: MessageKind.challenge, content: 'Challenge', timestamp: DateTime(2026, 5, 6, 10, 5)),
+          ChannelMessage(
+            agent: 'codex',
+            kind: MessageKind.proposal,
+            content: 'Test',
+            timestamp: DateTime(2026, 5, 6, 10, 0),
+          ),
+          ChannelMessage(
+            agent: 'claude',
+            kind: MessageKind.challenge,
+            content: 'Challenge',
+            timestamp: DateTime(2026, 5, 6, 10, 5),
+          ),
         ],
       );
       final issues = engine.validateChannelHealth(channel);

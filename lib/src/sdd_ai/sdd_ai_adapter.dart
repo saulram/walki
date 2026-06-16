@@ -21,7 +21,13 @@ class SddAiAdapter {
 
     Directory(changeDir).createSync(recursive: true);
 
-    for (final filename in ['proposal.md', 'decisions.md', 'tasks.md', 'risks.md', 'promotion-plan.md']) {
+    for (final filename in [
+      'proposal.md',
+      'decisions.md',
+      'tasks.md',
+      'risks.md',
+      'promotion-plan.md',
+    ]) {
       final title = filename.replaceAll('.md', '');
       final capitalized = title[0].toUpperCase() + title.substring(1);
       File(p.join(changeDir, filename)).writeAsStringSync('# $capitalized\n\n');
@@ -41,7 +47,9 @@ class SddAiAdapter {
     final dir = projectDir ?? Directory.current.path;
 
     if (!isAvailable(dir)) {
-      throw StateError('sdd-ai directory not found at ${p.join(dir, 'sdd-ai')}');
+      throw StateError(
+        'sdd-ai directory not found at ${p.join(dir, 'sdd-ai')}',
+      );
     }
 
     final changeDir = createChangeFolder(channelName, dir);

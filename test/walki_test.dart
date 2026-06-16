@@ -113,8 +113,14 @@ void main() {
 
     test('ChannelStatus fromString works', () {
       expect(ChannelStatus.fromString('open'), equals(ChannelStatus.open));
-      expect(ChannelStatus.fromString('needs-human'), equals(ChannelStatus.needsHuman));
-      expect(ChannelStatus.fromString('accepted'), equals(ChannelStatus.accepted));
+      expect(
+        ChannelStatus.fromString('needs-human'),
+        equals(ChannelStatus.needsHuman),
+      );
+      expect(
+        ChannelStatus.fromString('accepted'),
+        equals(ChannelStatus.accepted),
+      );
     });
   });
 

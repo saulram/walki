@@ -1,8 +1,10 @@
 import 'dart:io';
 import 'package:path/path.dart' as p;
 import 'package:yaml/yaml.dart';
+import '../agents/agent_prompts.dart';
 import '../config/walki_config.dart';
 import '../config/agent_config.dart';
+import 'artifact_id.dart';
 
 /// Filesystem operations for creating and managing a `.walki/` workspace.
 class Workspace {
@@ -58,7 +60,9 @@ class Workspace {
     final dir = projectDir ?? Directory.current.path;
     final configFile = File(p.join(dir, walkiDir, configFileName));
     if (!configFile.existsSync()) {
-      throw StateError('Walki workspace not initialized. Run `walki init` first.');
+      throw StateError(
+        'Walki workspace not initialized. Run `walki init` first.',
+      );
     }
     final content = configFile.readAsStringSync();
     final yaml = loadYaml(content) as Map;
@@ -78,7 +82,9 @@ class Workspace {
     String? projectDir,
     String template = 'minimal',
     List<String> agentNames = const ['codex', 'claude'],
+    Map<String, AgentConfig>? agentConfigs,
     bool sddAi = false,
+    List<String>? starterRules,
   }) {
     final dir = projectDir ?? Directory.current.path;
     final projectName = p.basename(dir);
@@ -98,61 +104,65 @@ class Workspace {
     Directory(p.join(dir, walkiDir, locksDir)).createSync();
 
     final agents = <String, AgentConfig>{};
-    for (final name in agentNames) {
-      final agentConfig = name == 'codex'
-          ? AgentConfig.implementer()
-          : name == 'claude'
-              ? AgentConfig.reviewer()
-              : AgentConfig(
-                  role: 'implementer',
-                  can: ['read', 'append', 'propose_decision', 'propose_task'],
-                );
+    final configuredAgents = agentConfigs ?? <String, AgentConfig>{};
+    final effectiveAgentNames = configuredAgents.isNotEmpty
+        ? configuredAgents.keys.toList()
+        : agentNames;
+    for (final name in effectiveAgentNames) {
+      if (normalizeArtifactId(name) == null) {
+        throw ArgumentError.value(name, 'agentNames', 'Invalid agent ID.');
+      }
+      final agentConfig = configuredAgents[name] ??
+          (name == 'codex'
+              ? AgentConfig.implementer()
+              : name == 'claude'
+                  ? AgentConfig.reviewer()
+                  : AgentConfig(
+                      role: 'implementer',
+                      can: [
+                        'read',
+                        'append',
+                        'propose_decision',
+                        'propose_task',
+                      ],
+                    ));
       agents[name] = agentConfig;
       File(p.join(dir, walkiDir, agentsDir, '$name.md'))
-          .writeAsStringSync(_generateAgentMarkdown(name, agentConfig));
+          .writeAsStringSync(generateAgentMarkdown(name, agentConfig));
     }
     agents['human'] = AgentConfig.owner();
     File(p.join(dir, walkiDir, agentsDir, 'human.md'))
-        .writeAsStringSync(_generateAgentMarkdown('human', AgentConfig.owner()));
+        .writeAsStringSync(generateAgentMarkdown('human', AgentConfig.owner()));
 
     final config = WalkiConfig(
       project: ProjectConfig(name: projectName),
       agents: agents,
-      sddAi: SddAiConfig(enabled: sddAi || hasSddAi(dir)),
+      sddAi: SddAiConfig(enabled: sddAi || template == 'sdd' || hasSddAi(dir)),
     );
     saveConfig(config, dir);
 
     File(p.join(dir, walkiDir, instructionsFileName))
         .writeAsStringSync(_defaultInstructions);
 
+    final rulesToCreate = starterRules ?? ['security', 'code-style'];
     if (template == 'minimal' || template == 'sdd') {
-      File(p.join(dir, walkiDir, rulesDir, 'security.md'))
-          .writeAsStringSync(_defaultSecurityRules);
-      File(p.join(dir, walkiDir, rulesDir, 'code-style.md'))
-          .writeAsStringSync(_defaultCodeStyleRules);
+      for (final ruleName in rulesToCreate) {
+        final rulePath = p.join(dir, walkiDir, rulesDir, '$ruleName.md');
+        final content = switch (ruleName) {
+          'security' => _defaultSecurityRules,
+          'code-style' => _defaultCodeStyleRules,
+          'testing' => _defaultTestingRules,
+          'sdd-ai' => _defaultSddAiRules,
+          _ => _defaultNamedRule(ruleName),
+        };
+        File(rulePath).writeAsStringSync(content);
+      }
     }
 
     File(p.join(dir, walkiDir, stateDir, 'index.yaml'))
         .writeAsStringSync('channels: []\ndecisions: []\ntasks: []\n');
 
     return baseDir;
-  }
-
-  String _generateAgentMarkdown(String id, AgentConfig config) {
-    final buffer = StringBuffer();
-    buffer.writeln('# Agent: $id');
-    buffer.writeln();
-    buffer.writeln('- **ID**: $id');
-    buffer.writeln('- **Role**: ${config.role}');
-    if (config.description.isNotEmpty) {
-      buffer.writeln('- **Description**: ${config.description}');
-    }
-    buffer.writeln('- **Can**:');
-    for (final perm in config.can) {
-      buffer.writeln('  - $perm');
-    }
-    buffer.writeln();
-    return buffer.toString();
   }
 
   String _mapToYamlString(Map<String, dynamic> map, [int indent = 0]) {
@@ -177,7 +187,9 @@ class Workspace {
           }
         }
       } else if (value is String) {
-        if (value.contains('\n') || value.contains(':') || value.contains('#')) {
+        if (value.contains('\n') ||
+            value.contains(':') ||
+            value.contains('#')) {
           buffer.writeln('$prefix$key: "$value"');
         } else {
           buffer.writeln('$prefix$key: $value');
@@ -222,4 +234,31 @@ For auth, payments, user data, permissions, or encryption:
 - Do not introduce frameworks without justification.
 - Prefer existing project patterns.
 ''';
+
+  static const _defaultTestingRules = '''# Testing Rules
+
+- Add targeted tests for behavior changes.
+- Run the smallest relevant test suite before full validation.
+- Include negative cases for permission, auth, parsing, and data-boundary changes.
+- Document any checks that could not be run and why.
+''';
+
+  static const _defaultSddAiRules = '''# sdd-ai Rules
+
+- Promote only accepted Walki decisions into sdd-ai artifacts.
+- Include rationale, risks, implementation tasks, and required validation.
+- Keep generated specs actionable enough for any supported agent to implement.
+- Do not bypass human acceptance before promotion.
+''';
+
+  static String _defaultNamedRule(String name) {
+    final title = name
+        .split('-')
+        .map(
+          (word) =>
+              word.isEmpty ? word : word[0].toUpperCase() + word.substring(1),
+        )
+        .join(' ');
+    return '# $title Rules\n\n- Add project-specific guidance here.\n';
+  }
 }

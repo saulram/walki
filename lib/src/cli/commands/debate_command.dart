@@ -2,6 +2,7 @@ import 'package:args/command_runner.dart';
 import 'package:mason_logger/mason_logger.dart';
 import 'dart:io';
 import 'package:path/path.dart' as p;
+import '../../agents/agent_prompts.dart';
 import '../../channels/channel.dart';
 import '../../channels/channel_formatter.dart';
 import '../../config/walki_config.dart';
@@ -46,7 +47,8 @@ class DebateCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -69,15 +71,24 @@ class DebateCommand extends Command<int> {
 
     final agentsStr = argResults?['agents'] as String?;
     final participants = agentsStr != null
-        ? agentsStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+        ? agentsStr
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList()
         : config.agents.keys.where((k) => k != 'human').toList();
 
     final rulesStr = argResults?['rules'] as String?;
     final rules = rulesStr != null
-        ? rulesStr.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList()
+        ? rulesStr
+            .split(',')
+            .map((s) => s.trim())
+            .where((s) => s.isNotEmpty)
+            .toList()
         : <String>[];
 
-    final maxTurns = int.tryParse(argResults?['max-turns'] as String? ?? '8') ?? 8;
+    final maxTurns =
+        int.tryParse(argResults?['max-turns'] as String? ?? '8') ?? 8;
     final sddChange = argResults?['sdd-change'] as bool? ?? false;
 
     final channelFile = File(
@@ -94,7 +105,8 @@ class DebateCommand extends Command<int> {
     final instructions = instructionLoader.load(
       projectDir: Directory.current.path,
       configPaths: config.instructions.load,
-      channelPaths: rules.map((r) => p.join('.walki', 'rules', '$r.md')).toList(),
+      channelPaths:
+          rules.map((r) => p.join(config.storage.rulesDir, '$r.md')).toList(),
     );
 
     final workingRules = <String>[
@@ -132,7 +144,8 @@ class DebateCommand extends Command<int> {
 
     if (sddChange && config.sddAi.enabled) {
       logger.info('');
-      logger.info('${yellow.wrap('sdd-ai change folder will be created on promote.')}');
+      logger.info(
+          '${yellow.wrap('sdd-ai change folder will be created on promote.')}');
     }
 
     logger.info('');
@@ -140,34 +153,14 @@ class DebateCommand extends Command<int> {
       final agentConfig = config.agents[agentId];
       if (agentConfig != null) {
         logger.info('Prompt for ${cyan.wrap(agentId)}:');
-        logger.info(_generateAgentPrompt(agentId, agentConfig.role, channelId));
+        logger.info(generateAgentPrompt(agentId, agentConfig, channelId));
         logger.info('');
       }
     }
 
-    logger.info('Use ${lightCyan.wrap('walki say <agent> $channelId "message"')} to post messages.');
+    logger.info(
+        'Use ${lightCyan.wrap('walki say <agent> $channelId "message"')} to post messages.');
 
     return 0;
-  }
-
-  String _generateAgentPrompt(String agentId, String role, String channelId) {
-    final roleDesc = role == 'implementer'
-        ? 'implementation-oriented'
-        : role == 'reviewer'
-            ? 'architecture and review-oriented'
-            : 'owner and decision-maker';
-    final focus = role == 'implementer'
-        ? 'Focus on implementation plan, edge cases, migrations, and tests.'
-        : role == 'reviewer'
-            ? 'Focus on architecture, security, correctness, maintainability, and tradeoffs. Challenge weak proposals constructively.'
-            : 'You are the owner. Accept or reject decisions.';
-    return 'You are $agentId, the $roleDesc agent in a Walki debate.\n\n'
-        'Channel:\n.walki/channels/$channelId.md\n\n'
-        'Read the entire channel before writing.\n'
-        'Append only.\n'
-        'End your message with OVER.\n'
-        '$focus\n'
-        'Do not accept final decisions without human confirmation.\n'
-        'You may propose decisions.\n';
   }
 }

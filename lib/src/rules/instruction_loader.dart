@@ -21,11 +21,13 @@ class InstructionLoader {
         seen.add(path);
         final content = file.readAsStringSync();
         if (content.trim().isNotEmpty) {
-          instructions.add(LoadedInstruction(
-            path: path,
-            source: source,
-            content: content,
-          ),);
+          instructions.add(
+            LoadedInstruction(
+              path: path,
+              source: source,
+              content: content,
+            ),
+          );
         }
       }
     }
@@ -46,7 +48,8 @@ class InstructionLoader {
 
     String? homeDir;
     try {
-      homeDir = Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
+      homeDir =
+          Platform.environment['HOME'] ?? Platform.environment['USERPROFILE'];
     } catch (_) {}
 
     if (homeDir != null) {
@@ -113,7 +116,9 @@ class InstructionLoader {
   String generateAgentInstructions(List<LoadedInstruction> instructions) {
     final buffer = StringBuffer();
     for (final instruction in instructions) {
-      buffer.writeln('## ${instruction.source.label}: ${p.basename(instruction.path)}');
+      buffer.writeln(
+        '## ${instruction.source.label}: ${p.basename(instruction.path)}',
+      );
       buffer.writeln();
       buffer.writeln(instruction.content);
       buffer.writeln();

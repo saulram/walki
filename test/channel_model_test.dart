@@ -6,13 +6,34 @@ void main() {
     test('fromString for all statuses', () {
       expect(ChannelStatus.fromString('open'), equals(ChannelStatus.open));
       expect(ChannelStatus.fromString('active'), equals(ChannelStatus.active));
-      expect(ChannelStatus.fromString('accepted'), equals(ChannelStatus.accepted));
-      expect(ChannelStatus.fromString('blocked'), equals(ChannelStatus.blocked));
-      expect(ChannelStatus.fromString('needs-human'), equals(ChannelStatus.needsHuman));
-      expect(ChannelStatus.fromString('needs-context'), equals(ChannelStatus.needsContext));
-      expect(ChannelStatus.fromString('superseded'), equals(ChannelStatus.superseded));
-      expect(ChannelStatus.fromString('abandoned'), equals(ChannelStatus.abandoned));
-      expect(ChannelStatus.fromString('promoted'), equals(ChannelStatus.promoted));
+      expect(
+        ChannelStatus.fromString('accepted'),
+        equals(ChannelStatus.accepted),
+      );
+      expect(
+        ChannelStatus.fromString('blocked'),
+        equals(ChannelStatus.blocked),
+      );
+      expect(
+        ChannelStatus.fromString('needs-human'),
+        equals(ChannelStatus.needsHuman),
+      );
+      expect(
+        ChannelStatus.fromString('needs-context'),
+        equals(ChannelStatus.needsContext),
+      );
+      expect(
+        ChannelStatus.fromString('superseded'),
+        equals(ChannelStatus.superseded),
+      );
+      expect(
+        ChannelStatus.fromString('abandoned'),
+        equals(ChannelStatus.abandoned),
+      );
+      expect(
+        ChannelStatus.fromString('promoted'),
+        equals(ChannelStatus.promoted),
+      );
       expect(ChannelStatus.fromString('closed'), equals(ChannelStatus.closed));
     });
 
@@ -33,11 +54,23 @@ void main() {
   group('MessageKind', () {
     test('fromString for all kinds', () {
       expect(MessageKind.fromString('proposal'), equals(MessageKind.proposal));
-      expect(MessageKind.fromString('challenge'), equals(MessageKind.challenge));
+      expect(
+        MessageKind.fromString('challenge'),
+        equals(MessageKind.challenge),
+      );
       expect(MessageKind.fromString('question'), equals(MessageKind.question));
-      expect(MessageKind.fromString('clarification'), equals(MessageKind.clarification));
-      expect(MessageKind.fromString('agreement'), equals(MessageKind.agreement));
-      expect(MessageKind.fromString('objection'), equals(MessageKind.objection));
+      expect(
+        MessageKind.fromString('clarification'),
+        equals(MessageKind.clarification),
+      );
+      expect(
+        MessageKind.fromString('agreement'),
+        equals(MessageKind.agreement),
+      );
+      expect(
+        MessageKind.fromString('objection'),
+        equals(MessageKind.objection),
+      );
       expect(MessageKind.fromString('decision'), equals(MessageKind.decision));
       expect(MessageKind.fromString('context'), equals(MessageKind.context));
       expect(MessageKind.fromString('summary'), equals(MessageKind.summary));
@@ -50,7 +83,10 @@ void main() {
 
     test('fromString is case insensitive', () {
       expect(MessageKind.fromString('PROPOSAL'), equals(MessageKind.proposal));
-      expect(MessageKind.fromString('Challenge'), equals(MessageKind.challenge));
+      expect(
+        MessageKind.fromString('Challenge'),
+        equals(MessageKind.challenge),
+      );
     });
   });
 
@@ -132,11 +168,36 @@ void main() {
     });
 
     test('isOpen is true for open and active', () {
-      final open = Channel(id: 't', status: ChannelStatus.open, createdAt: DateTime(2026), participants: []);
-      final active = Channel(id: 't', status: ChannelStatus.active, createdAt: DateTime(2026), participants: []);
-      final accepted = Channel(id: 't', status: ChannelStatus.accepted, createdAt: DateTime(2026), participants: []);
-      final blocked = Channel(id: 't', status: ChannelStatus.blocked, createdAt: DateTime(2026), participants: []);
-      final closed = Channel(id: 't', status: ChannelStatus.closed, createdAt: DateTime(2026), participants: []);
+      final open = Channel(
+        id: 't',
+        status: ChannelStatus.open,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
+      final active = Channel(
+        id: 't',
+        status: ChannelStatus.active,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
+      final accepted = Channel(
+        id: 't',
+        status: ChannelStatus.accepted,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
+      final blocked = Channel(
+        id: 't',
+        status: ChannelStatus.blocked,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
+      final closed = Channel(
+        id: 't',
+        status: ChannelStatus.closed,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
       expect(open.isOpen, isTrue);
       expect(active.isOpen, isTrue);
       expect(accepted.isOpen, isFalse);
@@ -145,8 +206,18 @@ void main() {
     });
 
     test('isClosed is inverse of isOpen', () {
-      final open = Channel(id: 't', status: ChannelStatus.open, createdAt: DateTime(2026), participants: []);
-      final accepted = Channel(id: 't', status: ChannelStatus.accepted, createdAt: DateTime(2026), participants: []);
+      final open = Channel(
+        id: 't',
+        status: ChannelStatus.open,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
+      final accepted = Channel(
+        id: 't',
+        status: ChannelStatus.accepted,
+        createdAt: DateTime(2026),
+        participants: [],
+      );
       expect(open.isClosed, isFalse);
       expect(accepted.isClosed, isTrue);
     });
@@ -158,9 +229,24 @@ void main() {
         createdAt: DateTime(2026),
         participants: [],
         messages: [
-          ChannelMessage(agent: 'a', kind: MessageKind.proposal, content: '1', timestamp: DateTime(2026)),
-          ChannelMessage(agent: 'b', kind: MessageKind.challenge, content: '2', timestamp: DateTime(2026)),
-          ChannelMessage(agent: 'a', kind: MessageKind.agreement, content: '3', timestamp: DateTime(2026)),
+          ChannelMessage(
+            agent: 'a',
+            kind: MessageKind.proposal,
+            content: '1',
+            timestamp: DateTime(2026),
+          ),
+          ChannelMessage(
+            agent: 'b',
+            kind: MessageKind.challenge,
+            content: '2',
+            timestamp: DateTime(2026),
+          ),
+          ChannelMessage(
+            agent: 'a',
+            kind: MessageKind.agreement,
+            content: '3',
+            timestamp: DateTime(2026),
+          ),
         ],
       );
       expect(channel.turnCount, equals(3));
@@ -190,7 +276,8 @@ void main() {
         createdAt: DateTime(2026),
         participants: ['codex'],
       );
-      final updated = channel.copyWith(participants: ['codex', 'claude', 'gemini']);
+      final updated =
+          channel.copyWith(participants: ['codex', 'claude', 'gemini']);
       expect(updated.participants.length, equals(3));
       expect(updated.participants, contains('gemini'));
     });

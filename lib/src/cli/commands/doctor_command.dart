@@ -23,7 +23,8 @@ class DoctorCommand extends Command<int> {
     final issues = <String>[];
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -35,7 +36,15 @@ class DoctorCommand extends Command<int> {
       issues.add('.walki/ directory not found.');
     }
 
-    final requiredDirs = ['agents', 'rules', 'channels', 'decisions', 'tasks', 'state', 'locks'];
+    final requiredDirs = [
+      'agents',
+      'rules',
+      'channels',
+      'decisions',
+      'tasks',
+      'state',
+      'locks'
+    ];
     for (final dir in requiredDirs) {
       if (!Directory('.walki/$dir').existsSync()) {
         issues.add('.walki/$dir/ directory missing.');
@@ -69,7 +78,11 @@ class DoctorCommand extends Command<int> {
 
       final channelsDir = Directory(config.storage.channelDir);
       if (channelsDir.existsSync()) {
-        final channelFiles = channelsDir.listSync().whereType<File>().where((f) => f.path.endsWith('.md')).toList();
+        final channelFiles = channelsDir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.md'))
+            .toList();
 
         final parser = const ChannelParser();
         final permissionEngine = const PermissionEngine();
@@ -78,17 +91,20 @@ class DoctorCommand extends Command<int> {
           try {
             final channel = parser.parse(channelFile.readAsStringSync());
 
-            final healthIssues = permissionEngine.validateChannelHealth(channel);
+            final healthIssues =
+                permissionEngine.validateChannelHealth(channel);
             for (final issue in healthIssues) {
               issues.add('Channel ${channel.id}: $issue');
             }
 
-            if (channel.status == ChannelStatus.open && channel.messages.isEmpty) {
+            if (channel.status == ChannelStatus.open &&
+                channel.messages.isEmpty) {
               issues.add('Channel ${channel.id} is open but has no messages.');
             }
 
             if (channel.turnCount >= channel.maxTurns && channel.isOpen) {
-              issues.add('Channel ${channel.id} has reached max turns but is still open.');
+              issues.add(
+                  'Channel ${channel.id} has reached max turns but is still open.');
             }
           } catch (e) {
             issues.add('Failed to parse channel ${channelFile.path}: $e');
@@ -99,25 +115,30 @@ class DoctorCommand extends Command<int> {
       for (final agentEntry in config.agents.entries) {
         final agentFile = File('.walki/agents/${agentEntry.key}.md');
         if (!agentFile.existsSync()) {
-          issues.add('Agent "${agentEntry.key}" registered in config but .walki/agents/${agentEntry.key}.md not found.');
+          issues.add(
+              'Agent "${agentEntry.key}" registered in config but .walki/agents/${agentEntry.key}.md not found.');
         }
       }
 
       if (config.sddAi.enabled && !workspace.hasSddAi()) {
-        issues.add('sdd-ai integration enabled but sdd-ai/ directory not found.');
+        issues
+            .add('sdd-ai integration enabled but sdd-ai/ directory not found.');
       }
 
       final locksDir = Directory('.walki/locks');
       if (locksDir.existsSync()) {
-        final locks = locksDir.listSync().where((f) => f.path.endsWith('.lock')).toList();
+        final locks =
+            locksDir.listSync().where((f) => f.path.endsWith('.lock')).toList();
         for (final lock in locks) {
           final content = File(lock.path).readAsStringSync();
           if (content.contains('expires_at:')) {
-            final expiresMatch = RegExp(r'expires_at:\s*(.+)').firstMatch(content);
+            final expiresMatch =
+                RegExp(r'expires_at:\s*(.+)').firstMatch(content);
             if (expiresMatch != null) {
               final expires = DateTime.tryParse(expiresMatch[1]?.trim() ?? '');
               if (expires != null && expires.isBefore(DateTime.now())) {
-                issues.add('Stale lock: ${lock.path}. Lock expired at $expires.');
+                issues
+                    .add('Stale lock: ${lock.path}. Lock expired at $expires.');
               }
             }
           }
@@ -137,7 +158,8 @@ class DoctorCommand extends Command<int> {
         logger.info('  ${red.wrap('x')} $issue');
       }
       logger.info('');
-      logger.info('Run ${lightCyan.wrap('walki doctor')} again after fixing these issues.');
+      logger.info(
+          'Run ${lightCyan.wrap('walki doctor')} again after fixing these issues.');
       return 1;
     }
   }

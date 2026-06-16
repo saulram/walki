@@ -9,9 +9,11 @@ import 'package:walki/src/cli/commands/status_command.dart';
 import 'package:walki/src/cli/commands/summarize_command.dart';
 import 'package:walki/src/cli/commands/close_command.dart';
 import 'package:walki/src/cli/commands/promote_command.dart';
+import 'package:walki/src/cli/commands/propose_decision_command.dart';
 import 'package:walki/src/cli/commands/doctor_command.dart';
 import 'package:walki/src/cli/commands/rules_command.dart';
 import 'package:walki/src/cli/commands/export_command.dart';
+import 'package:walki/src/cli/commands/mcp_command.dart';
 
 void main(List<String> args) {
   final logger = Logger();
@@ -28,9 +30,11 @@ void main(List<String> args) {
     ..addCommand(SummarizeCommand(logger: logger))
     ..addCommand(CloseCommand(logger: logger))
     ..addCommand(PromoteCommand(logger: logger))
+    ..addCommand(ProposeDecisionCommand(logger: logger))
     ..addCommand(DoctorCommand(logger: logger))
     ..addCommand(RulesCommand(logger: logger))
-    ..addCommand(ExportCommand(logger: logger));
+    ..addCommand(ExportCommand(logger: logger))
+    ..addCommand(McpCommand(logger: logger));
 
   runner.run(args).catchError((Object error) {
     if (error is UsageException) {

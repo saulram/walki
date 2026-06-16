@@ -36,7 +36,8 @@ class ExportCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -92,20 +93,28 @@ class ExportCommand extends Command<int> {
       'participants': channel.participants,
       'prompt': channel.prompt,
       'max_turns': channel.maxTurns,
-      'messages': channel.messages.map((ChannelMessage m) => {
-        'timestamp': m.timestamp.toIso8601String(),
-        'agent': m.agent,
-        'kind': m.kind.name,
-        'content': m.content,
-        'ends_with_over': m.endsWithOver,
-      },).toList(),
-      'decisions': channel.decisions.map((ChannelDecision d) => {
-        'status': d.status,
-        'summary': d.summary,
-        'rationale': d.rationale,
-        'risks': d.risks,
-        'required_tests': d.requiredTests,
-      },).toList(),
+      'messages': channel.messages
+          .map(
+            (ChannelMessage m) => {
+              'timestamp': m.timestamp.toIso8601String(),
+              'agent': m.agent,
+              'kind': m.kind.name,
+              'content': m.content,
+              'ends_with_over': m.endsWithOver,
+            },
+          )
+          .toList(),
+      'decisions': channel.decisions
+          .map(
+            (ChannelDecision d) => {
+              'status': d.status,
+              'summary': d.summary,
+              'rationale': d.rationale,
+              'risks': d.risks,
+              'required_tests': d.requiredTests,
+            },
+          )
+          .toList(),
     };
     return const JsonEncoder.withIndent('  ').convert(data);
   }

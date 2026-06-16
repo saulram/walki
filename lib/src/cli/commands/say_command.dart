@@ -22,6 +22,7 @@ class SayCommand extends Command<int> {
         'clarification',
         'agreement',
         'objection',
+        'decision',
         'context',
         'summary',
         'meta',
@@ -42,7 +43,8 @@ class SayCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -66,7 +68,8 @@ class SayCommand extends Command<int> {
     }
 
     if (!config.agents.containsKey(agent)) {
-      logger.err('Unknown agent "$agent". Registered agents: ${config.agents.keys.join(', ')}');
+      logger.err(
+          'Unknown agent "$agent". Registered agents: ${config.agents.keys.join(', ')}');
       return 1;
     }
 
@@ -88,7 +91,12 @@ class SayCommand extends Command<int> {
 
     final permissionEngine = const PermissionEngine();
     final agentConfig = config.agents[agent]!;
-    final violations = permissionEngine.validateMessage(agentConfig, channel, 'append');
+    final violations = permissionEngine.validateMessage(
+      agentConfig,
+      channel,
+      'append',
+      agentId: agent,
+    );
 
     if (violations.isNotEmpty) {
       for (final violation in violations) {

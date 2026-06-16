@@ -1,3 +1,15 @@
+# 0.4.0
+
+- Add interactive `walki init` wizard with detection for Claude, Codex, Gemini, and opencode
+- Add `walki agent show/edit/tune/remove/prompt` for richer agent management
+- Add `walki rules show/edit/remove/draft/apply` with editor launching and rule-draft debates
+- Add CLI `walki propose_decision` for structured decision blocks
+- Add MCP tools for non-interactive workspace init, agent/rule management, summaries, exports, and doctor checks
+- Add `walki mcp init` and init-wizard MCP setup for Claude, Codex, Gemini, and opencode project configs
+- Harden `close` and `promote` with owner/agent permission checks; local CLI defaults owner actions to `human`
+- Fix MCP channel creation to honor requested rules and fix read tail handling
+- Fix `init --template sdd` so it enables sdd-ai integration
+
 # 0.3.1
 
 - Docs: remove `Integration with sdd_ai` section from README for a leaner local-first narrative

@@ -27,7 +27,9 @@ class Agent {
     buffer.writeln();
     buffer.writeln('- **ID**: $id');
     buffer.writeln('- **Role**: $role');
-    buffer.writeln('- **Description**: ${description.isEmpty ? "No description" : description}');
+    buffer.writeln(
+      '- **Description**: ${description.isEmpty ? "No description" : description}',
+    );
     buffer.writeln('- **Can**:');
     for (final permission in can) {
       buffer.writeln('  - $permission');
@@ -36,7 +38,9 @@ class Agent {
 
     buffer.writeln('## Prompt');
     buffer.writeln();
-    buffer.writeln('You are $id, the ${_roleDescription()} agent in a Walki debate.');
+    buffer.writeln(
+      'You are $id, the ${_roleDescription()} agent in a Walki debate.',
+    );
     buffer.writeln();
     buffer.writeln('Rules:');
     buffer.writeln('- Read the entire channel before writing.');
@@ -44,7 +48,9 @@ class Agent {
     buffer.writeln('- End your message with OVER.');
     buffer.writeln('- Make proposals explicit.');
     buffer.writeln('- Include risks and required tests.');
-    buffer.writeln('- Stop when consensus is reached, context is missing, or human input is required.');
+    buffer.writeln(
+      '- Stop when consensus is reached, context is missing, or human input is required.',
+    );
     buffer.writeln();
 
     return buffer.toString();

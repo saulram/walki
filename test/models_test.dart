@@ -4,7 +4,11 @@ import 'package:walki/walki.dart';
 void main() {
   group('Agent', () {
     test('toMarkdown generates correct output for implementer', () {
-      const agent = Agent(id: 'codex', role: 'implementer', can: ['read', 'append', 'propose_decision', 'propose_task']);
+      const agent = Agent(
+        id: 'codex',
+        role: 'implementer',
+        can: ['read', 'append', 'propose_decision', 'propose_task'],
+      );
       final md = agent.toMarkdown();
       expect(md, contains('# Agent: codex'));
       expect(md, contains('- **Role**: implementer'));
@@ -13,7 +17,11 @@ void main() {
     });
 
     test('toMarkdown generates correct output for reviewer', () {
-      const agent = Agent(id: 'claude', role: 'reviewer', can: ['read', 'append', 'challenge_decision']);
+      const agent = Agent(
+        id: 'claude',
+        role: 'reviewer',
+        can: ['read', 'append', 'challenge_decision'],
+      );
       final md = agent.toMarkdown();
       expect(md, contains('# Agent: claude'));
       expect(md, contains('- **Role**: reviewer'));
@@ -21,7 +29,8 @@ void main() {
     });
 
     test('toMarkdown generates correct output for owner', () {
-      const agent = Agent(id: 'human', role: 'owner', can: ['read', 'accept_decision']);
+      const agent =
+          Agent(id: 'human', role: 'owner', can: ['read', 'accept_decision']);
       final md = agent.toMarkdown();
       expect(md, contains('# Agent: human'));
       expect(md, contains('- **Role**: owner'));
@@ -29,7 +38,12 @@ void main() {
     });
 
     test('toMarkdown includes description', () {
-      const agent = Agent(id: 'codex', role: 'implementer', description: 'OpenAI agent', can: ['read']);
+      const agent = Agent(
+        id: 'codex',
+        role: 'implementer',
+        description: 'OpenAI agent',
+        can: ['read'],
+      );
       final md = agent.toMarkdown();
       expect(md, contains('- **Description**: OpenAI agent'));
     });
@@ -109,7 +123,10 @@ void main() {
         status: 'proposed',
         decisionId: 'auth',
         suggestedOwner: 'codex',
-        acceptanceCriteria: ['All requests authenticated', 'Token expires correctly'],
+        acceptanceCriteria: [
+          'All requests authenticated',
+          'Token expires correctly',
+        ],
         createdAt: DateTime(2026, 5, 6),
       );
       final md = task.toMarkdown();

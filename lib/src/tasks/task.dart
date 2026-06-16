@@ -44,7 +44,9 @@ class Task {
     buffer.writeln('- channel: $channelId');
     buffer.writeln('- decision: $decisionId');
     buffer.writeln('- status: $status');
-    buffer.writeln('- suggested_owner: ${suggestedOwner.isEmpty ? "pending" : suggestedOwner}');
+    buffer.writeln(
+      '- suggested_owner: ${suggestedOwner.isEmpty ? "pending" : suggestedOwner}',
+    );
     buffer.writeln('- created_at: ${createdAt.toUtc().toIso8601String()}');
     buffer.writeln();
 

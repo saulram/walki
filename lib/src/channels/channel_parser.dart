@@ -70,8 +70,7 @@ class ChannelParser {
           var content = StringBuffer();
           var endsWithOver = false;
 
-          final timestampHeaderRegex =
-              RegExp(r'^##\s+\d{4}-\d{2}-\d{2}T');
+          final timestampHeaderRegex = RegExp(r'^##\s+\d{4}-\d{2}-\d{2}T');
           for (var j = i + 1; j < lines.length; j++) {
             final msgLine = lines[j].trim();
             if (msgLine.startsWith('---') ||
@@ -91,13 +90,15 @@ class ChannelParser {
             content.writeln(lines[j]);
           }
 
-          messages.add(ChannelMessage(
-            agent: agent,
-            kind: kind,
-            content: content.toString().trimRight(),
-            timestamp: timestamp,
-            endsWithOver: endsWithOver,
-          ),);
+          messages.add(
+            ChannelMessage(
+              agent: agent,
+              kind: kind,
+              content: content.toString().trimRight(),
+              timestamp: timestamp,
+              endsWithOver: endsWithOver,
+            ),
+          );
           continue;
         }
 
@@ -173,13 +174,15 @@ class ChannelParser {
         }
         if (line.isEmpty) continue;
         if (line.startsWith('---')) {
-          decisions.add(ChannelDecision(
-            status: decisionStatus,
-            summary: decisionSummary.toString().trimRight(),
-            rationale: decisionRationale.toString().trimRight(),
-            risks: decisionRisks,
-            requiredTests: decisionTests,
-          ),);
+          decisions.add(
+            ChannelDecision(
+              status: decisionStatus,
+              summary: decisionSummary.toString().trimRight(),
+              rationale: decisionRationale.toString().trimRight(),
+              risks: decisionRisks,
+              requiredTests: decisionTests,
+            ),
+          );
           inDecision = false;
           decisionStatus = '';
           decisionSummary = StringBuffer();
@@ -193,7 +196,9 @@ class ChannelParser {
       }
 
       if (section == 'prompt') {
-        if (line.isNotEmpty && !line.startsWith('##') && !line.startsWith('---')) {
+        if (line.isNotEmpty &&
+            !line.startsWith('##') &&
+            !line.startsWith('---')) {
           prompt = line;
         }
         continue;
@@ -215,13 +220,15 @@ class ChannelParser {
     }
 
     if (inDecision && decisionSummary.isNotEmpty) {
-      decisions.add(ChannelDecision(
-        status: decisionStatus,
-        summary: decisionSummary.toString().trimRight(),
-        rationale: decisionRationale.toString().trimRight(),
-        risks: decisionRisks,
-        requiredTests: decisionTests,
-      ),);
+      decisions.add(
+        ChannelDecision(
+          status: decisionStatus,
+          summary: decisionSummary.toString().trimRight(),
+          rationale: decisionRationale.toString().trimRight(),
+          risks: decisionRisks,
+          requiredTests: decisionTests,
+        ),
+      );
     }
 
     return Channel(

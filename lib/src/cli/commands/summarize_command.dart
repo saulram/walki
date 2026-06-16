@@ -22,7 +22,8 @@ class SummarizeCommand extends Command<int> {
     final workspace = const Workspace();
 
     if (!workspace.isInitialized()) {
-      logger.err('Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
+      logger.err(
+          'Walki workspace not initialized. Run ${lightCyan.wrap('walki init')} first.');
       return 1;
     }
 
@@ -68,7 +69,8 @@ class SummarizeCommand extends Command<int> {
     if (channel.messages.isNotEmpty) {
       logger.info('## Proposals');
       logger.info('');
-      for (final msg in channel.messages.where((m) => m.kind == MessageKind.proposal)) {
+      for (final msg
+          in channel.messages.where((m) => m.kind == MessageKind.proposal)) {
         logger.info('**${msg.agent}** (${msg.timestamp.toIso8601String()}):');
         logger.info(msg.content);
         logger.info('');
@@ -76,7 +78,8 @@ class SummarizeCommand extends Command<int> {
 
       logger.info('## Challenges');
       logger.info('');
-      for (final msg in channel.messages.where((m) => m.kind == MessageKind.challenge)) {
+      for (final msg
+          in channel.messages.where((m) => m.kind == MessageKind.challenge)) {
         logger.info('**${msg.agent}** (${msg.timestamp.toIso8601String()}):');
         logger.info(msg.content);
         logger.info('');
@@ -84,7 +87,17 @@ class SummarizeCommand extends Command<int> {
 
       logger.info('## Agreements');
       logger.info('');
-      for (final msg in channel.messages.where((m) => m.kind == MessageKind.agreement)) {
+      for (final msg
+          in channel.messages.where((m) => m.kind == MessageKind.agreement)) {
+        logger.info('**${msg.agent}** (${msg.timestamp.toIso8601String()}):');
+        logger.info(msg.content);
+        logger.info('');
+      }
+
+      logger.info('## Decision Messages');
+      logger.info('');
+      for (final msg
+          in channel.messages.where((m) => m.kind == MessageKind.decision)) {
         logger.info('**${msg.agent}** (${msg.timestamp.toIso8601String()}):');
         logger.info(msg.content);
         logger.info('');
@@ -108,10 +121,12 @@ class SummarizeCommand extends Command<int> {
     if (channel.status == ChannelStatus.active) {
       final lastMsg = channel.messages.lastOrNull;
       if (lastMsg != null) {
-        logger.info('Last message from ${lastMsg.agent}. Waiting for other participants to respond.');
+        logger.info(
+            'Last message from ${lastMsg.agent}. Waiting for other participants to respond.');
       }
     } else {
-      logger.info('Channel is ${channel.status.toYamlValue()}. No further action needed.');
+      logger.info(
+          'Channel is ${channel.status.toYamlValue()}. No further action needed.');
     }
 
     return 0;

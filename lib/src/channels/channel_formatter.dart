@@ -15,7 +15,9 @@ class ChannelFormatter {
     buffer.writeln();
     buffer.writeln('- id: ${channel.id}');
     buffer.writeln('- status: ${channel.status.toYamlValue()}');
-    buffer.writeln('- created_at: ${channel.createdAt.toUtc().toIso8601String()}');
+    buffer.writeln(
+      '- created_at: ${channel.createdAt.toUtc().toIso8601String()}',
+    );
     buffer.writeln('- participants: ${channel.participants.join(', ')}');
     buffer.writeln('- max_turns: ${channel.maxTurns}');
     buffer.writeln();
@@ -99,7 +101,9 @@ class ChannelFormatter {
   String formatAppendMessage(ChannelMessage message) {
     final buffer = StringBuffer();
     buffer.writeln();
-    buffer.writeln('## ${message.timestamp.toUtc().toIso8601String()} - ${message.agent} - ${message.kind.name}');
+    buffer.writeln(
+      '## ${message.timestamp.toUtc().toIso8601String()} - ${message.agent} - ${message.kind.name}',
+    );
     buffer.writeln();
     buffer.writeln(message.content);
     buffer.writeln();
@@ -172,7 +176,9 @@ class ChannelFormatter {
 
     if (channel.messages.isNotEmpty) {
       final lastMessage = channel.messages.last;
-      buffer.writeln('Last message: ${lastMessage.agent} (${lastMessage.kind.name})');
+      buffer.writeln(
+        'Last message: ${lastMessage.agent} (${lastMessage.kind.name})',
+      );
     }
 
     return buffer.toString();

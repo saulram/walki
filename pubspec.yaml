@@ -1,6 +1,6 @@
 name: walki
 description: Local coordination protocol for AI agents. Let agents debate, reach agreements, and produce reviewable decisions through Markdown files in your repo.
-version: 0.3.1
+version: 0.4.0
 repository: https://github.com/saulram/walki
 license: MIT
 

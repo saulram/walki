@@ -35,7 +35,8 @@ enum ChannelStatus {
     final normalized = value.toLowerCase();
     for (final status in ChannelStatus.values) {
       final statusKebab = _camelToKebab(status.name);
-      if (statusKebab == normalized || status.name.toLowerCase() == normalized) {
+      if (statusKebab == normalized ||
+          status.name.toLowerCase() == normalized) {
         return status;
       }
     }
@@ -206,7 +207,8 @@ class Channel {
   int get turnCount => messages.length;
 
   /// Whether the channel is still writable.
-  bool get isOpen => status == ChannelStatus.open || status == ChannelStatus.active;
+  bool get isOpen =>
+      status == ChannelStatus.open || status == ChannelStatus.active;
 
   /// Whether the channel is in a terminal state.
   bool get isClosed => !isOpen;

@@ -1,5 +1,7 @@
 # Walki
 
+![Walki banner](walki_banner.png)
+
 Local coordination protocol for AI agents.
 
 Walki lets Codex, Claude Code, Gemini CLI, Cursor agents, and other AI coding agents deliberate through Markdown files inside your repo.
@@ -66,8 +68,12 @@ dart compile exe bin/walki.dart -o walki
 ## Quick start
 
 ```bash
-# Initialize Walki in your project
-walki init --agents codex,claude
+# Initialize Walki in your project.
+# Interactive terminals get a setup wizard with agent detection.
+walki init
+
+# Scripted setup still works.
+walki init --agents codex,claude --non-interactive
 
 # Start a debate
 walki debate auth "How should we implement multi-tenant auth?" \
@@ -86,7 +92,12 @@ walki status auth
 # Generate structured summary
 walki summarize auth
 
-# Close debate
+# Propose and close a structured decision
+walki propose_decision auth "Use tenant-scoped claims, resolver middleware, and repository filtering." \
+  --agent claude \
+  --rationale "Defense in depth across request and data layers" \
+  --risks "Token invalidation complexity" \
+  --tests "Cross-tenant access attempts"
 walki close auth --status accepted
 
 # Export as JSON
@@ -95,8 +106,8 @@ walki export auth --format json -o auth-debate.json
 # Validate workspace integrity
 walki doctor
 
-# Promote to sdd_ai
-walki promote auth --to sdd-ai
+# Promote to decisions or sdd_ai once accepted
+walki promote auth --to decisions
 ```
 
 ## How it works
@@ -237,20 +248,32 @@ Walki enforces protocol-level permissions when appending messages:
 
 | Command | Description |
 |---------|-------------|
-| `walki init [--agents codex,claude] [--sdd-ai]` | Initialize `.walki/` workspace |
+| `walki init [--agents codex,claude] [--sdd-ai] [--non-interactive]` | Initialize `.walki/` workspace; runs a setup wizard in interactive terminals when `--agents` is omitted |
 | `walki agent add <id> --role <role>` | Register an agent |
 | `walki agent list` | List registered agents |
+| `walki agent show <id>` | Show agent role, description, and permissions |
+| `walki agent edit <id>` | Edit agent role, description, and permissions |
+| `walki agent tune <id>` | Open the agent Markdown file in `$VISUAL`, `$EDITOR`, `micro`, `nano`, `vim`, or `vi` |
+| `walki agent prompt <id> [--channel channel]` | Print a copy-paste prompt for an agent |
+| `walki agent remove <id>` | Remove an agent |
 | `walki debate <id> "question" [--agents] [--rules] [--max-turns]` | Create a debate channel |
-| `walki say <agent> <channel> "message" [--kind proposal\|challenge\|...]` | Append a message |
+| `walki say <agent> <channel> "message" [--kind proposal\|challenge\|decision\|...]` | Append a message |
+| `walki propose_decision <channel> "summary" --agent <agent>` | Append a structured proposed decision |
 | `walki read <channel> [--tail N]` | Read channel messages |
 | `walki status [channel]` | Show workspace or channel status |
 | `walki summarize <channel>` | Generate structured summary |
-| `walki close <channel> --status accepted\|blocked\|...` | Close a debate |
-| `walki promote <channel> --to sdd-ai\|decisions` | Promote decision |
+| `walki close <channel> --status accepted\|blocked\|... [--agent human]` | Close a debate |
+| `walki promote <channel> --to sdd-ai\|decisions [--agent human] [--yes]` | Promote an accepted decision |
 | `walki doctor` | Validate workspace integrity |
 | `walki rules add <name>` | Create a new rule file |
 | `walki rules list` | List project rules |
+| `walki rules show <name>` | Print a rule file |
+| `walki rules edit <name>` | Open a rule file in the detected editor |
+| `walki rules remove <name>` | Remove a rule file |
+| `walki rules draft [--agents claude,codex]` | Create a debate for repo-specific rule generation |
+| `walki rules apply <channel>` | Apply accepted `walki-rule` blocks from a rule draft debate |
 | `walki export <channel> --format markdown\|json [-o file]` | Export debate |
+| `walki mcp init --agent claude\|codex\|gemini\|opencode` | Configure Walki MCP at project level for an agent |
 
 ## Key principles
 
@@ -283,6 +306,15 @@ walki-mcp
 | `walki_get_status` | Get channel or workspace status |
 | `walki_close_channel` | Close a debate (accepted, blocked, needs-human, etc.) |
 | `walki_promote_to_sdd` | Promote a decision to sdd-ai or decisions |
+| `walki_init_workspace` | Initialize a workspace non-interactively |
+| `walki_list_agents` | List configured agents |
+| `walki_add_agent` | Register an agent |
+| `walki_list_rules` | List project rules |
+| `walki_add_rule` | Create a project rule |
+| `walki_show_rule` | Read a project rule |
+| `walki_summarize_channel` | Generate a structured channel summary |
+| `walki_export_channel` | Export a channel as Markdown or JSON |
+| `walki_doctor` | Run workspace health checks |
 
 ### Example: opencode using Walki via MCP
 
@@ -307,6 +339,17 @@ Add to your project's MCP config:
 }
 ```
 
+Or let Walki write the project-level config for a supported agent:
+
+```bash
+walki mcp init --agent claude
+walki mcp init --agent opencode
+walki mcp init --agent gemini
+walki mcp init --agent codex
+```
+
+This creates or updates the agent's project config with a `walki` MCP server pointing to `walki-mcp`. Use `--force` to replace an existing `walki` MCP entry.
+
 ## Custom instructions
 
 Walki loads instructions in order of specificity:
@@ -327,7 +370,11 @@ Create rules for your project:
 walki rules add security
 walki rules add code-style
 walki rules add testing
+walki rules edit testing
+walki rules draft --agents claude,codex
 ```
+
+`walki rules draft` scans common instruction files such as `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `.cursor/rules/*`, `.github/copilot-instructions.md`, `README.md`, and existing `.walki/rules/*.md`. Agents debate the proposed rules, then an accepted draft can be applied with `walki rules apply <channel>`.
 
 Example `.walki/rules/security.md`:
 

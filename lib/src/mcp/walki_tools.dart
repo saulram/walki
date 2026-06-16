@@ -1,10 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:mcp_server/mcp_server.dart';
 import 'package:path/path.dart' as p;
+import '../agents/agent_prompts.dart';
 import '../channels/channel.dart';
 import '../channels/channel_parser.dart';
 import '../channels/channel_formatter.dart';
+import '../config/agent_config.dart';
 import '../config/walki_config.dart';
+import '../rules/instruction_loader.dart';
 import '../sdd_ai/sdd_ai_adapter.dart';
 import '../storage/workspace.dart';
 import '../validation/permission_engine.dart';
@@ -223,6 +227,135 @@ void registerWalkiTools(Server server) {
     },
     handler: _promoteToSdd,
   );
+
+  server.addTool(
+    name: 'walki_init_workspace',
+    description:
+        'Initialize a Walki workspace non-interactively. Fails if .walki already exists.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'agents': {
+          'type': 'string',
+          'description': 'Comma-separated agents (default: codex,claude)',
+        },
+        'template': {
+          'type': 'string',
+          'enum': ['minimal', 'sdd'],
+          'description': 'Workspace template (default: minimal)',
+        },
+        'sdd_ai': {
+          'type': 'boolean',
+          'description': 'Enable sdd-ai integration',
+        },
+      },
+    },
+    handler: _initWorkspace,
+  );
+
+  server.addTool(
+    name: 'walki_list_agents',
+    description: 'List configured Walki agents.',
+    inputSchema: {'type': 'object', 'properties': <String, dynamic>{}},
+    handler: _listAgents,
+  );
+
+  server.addTool(
+    name: 'walki_add_agent',
+    description: 'Add a Walki agent with a role and optional description.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'id': {'type': 'string', 'description': 'Agent ID'},
+        'role': {
+          'type': 'string',
+          'enum': ['implementer', 'reviewer', 'owner'],
+          'description': 'Agent role (default: implementer)',
+        },
+        'description': {
+          'type': 'string',
+          'description': 'Agent description',
+        },
+      },
+      'required': ['id'],
+    },
+    handler: _addAgent,
+  );
+
+  server.addTool(
+    name: 'walki_list_rules',
+    description: 'List Walki rule files.',
+    inputSchema: {'type': 'object', 'properties': <String, dynamic>{}},
+    handler: _listRules,
+  );
+
+  server.addTool(
+    name: 'walki_add_rule',
+    description: 'Create a Walki rule file.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'name': {'type': 'string', 'description': 'Rule name'},
+        'description': {
+          'type': 'string',
+          'description': 'Optional rule description',
+        },
+      },
+      'required': ['name'],
+    },
+    handler: _addRule,
+  );
+
+  server.addTool(
+    name: 'walki_show_rule',
+    description: 'Read a Walki rule file.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'name': {'type': 'string', 'description': 'Rule name'},
+      },
+      'required': ['name'],
+    },
+    handler: _showRule,
+  );
+
+  server.addTool(
+    name: 'walki_summarize_channel',
+    description: 'Generate a structured summary of a debate channel.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'channel': {'type': 'string', 'description': 'Channel ID'},
+      },
+      'required': ['channel'],
+    },
+    handler: _summarizeChannel,
+  );
+
+  server.addTool(
+    name: 'walki_export_channel',
+    description: 'Export a debate channel as markdown or json.',
+    inputSchema: {
+      'type': 'object',
+      'properties': {
+        'channel': {'type': 'string', 'description': 'Channel ID'},
+        'format': {
+          'type': 'string',
+          'enum': ['markdown', 'json'],
+          'description': 'Export format (default: markdown)',
+        },
+      },
+      'required': ['channel'],
+    },
+    handler: _exportChannel,
+  );
+
+  server.addTool(
+    name: 'walki_doctor',
+    description: 'Run basic Walki workspace health checks.',
+    inputSchema: {'type': 'object', 'properties': <String, dynamic>{}},
+    handler: _doctor,
+  );
 }
 
 Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
@@ -234,6 +367,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
   final id = args['id'] as String;
   final prompt = args['prompt'] as String;
   final agentsStr = args['agents'] as String? ?? '';
+  final rulesStr = args['rules'] as String? ?? '';
   final maxTurns = args['max_turns'] as int? ?? 8;
   final normalizedId = _sanitizeArtifactId(id);
   if (normalizedId == null) {
@@ -255,6 +389,19 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
           .where((s) => s.isNotEmpty)
           .toList()
       : config.agents.keys.where((k) => k != 'human').toList();
+
+  final rules = rulesStr
+      .split(',')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+  final instructionLoader = const InstructionLoader();
+  final instructions = instructionLoader.load(
+    projectDir: Directory.current.path,
+    configPaths: config.instructions.load,
+    channelPaths:
+        rules.map((r) => p.join(config.storage.rulesDir, '$r.md')).toList(),
+  );
 
   final channelFile = _channelFileFor(config, normalizedId);
   if (channelFile.existsSync()) {
@@ -278,7 +425,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
     createdAt: DateTime.now(),
     participants: participants,
     prompt: prompt,
-    loadedInstructions: config.instructions.load,
+    loadedInstructions: instructions.map((i) => i.path).toList(),
     workingRules: workingRules,
     maxTurns: maxTurns,
   );
@@ -291,7 +438,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
     final agentConfig = config.agents[agentId];
     if (agentConfig != null) {
       prompts[agentId] =
-          _generateAgentPrompt(agentId, agentConfig.role, normalizedId);
+          generateAgentPrompt(agentId, agentConfig, normalizedId);
     }
   }
 
@@ -329,9 +476,14 @@ Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
   }
 
   final parser = const ChannelParser();
-  final channel = parser.parse(channelFile.readAsStringSync());
+  final content = channelFile.readAsStringSync();
+  final channel = parser.parse(content);
 
-  if (tail != null && tail < channel.messages.length) {
+  if (tail != null && tail <= 0) {
+    return _error('tail must be greater than zero.');
+  }
+
+  if (tail != null) {
     final messages = channel.messages.reversed.take(tail).toList().reversed;
     final result = StringBuffer();
     result.writeln('Channel: ${channel.id} (last $tail messages)');
@@ -346,8 +498,7 @@ Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
     return CallToolResult(content: [TextContent(text: result.toString())]);
   }
 
-  return CallToolResult(
-      content: [TextContent(text: channelFile.readAsStringSync())]);
+  return CallToolResult(content: [TextContent(text: content)]);
 }
 
 Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
@@ -379,7 +530,8 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
   }
 
   final parser = const ChannelParser();
-  final channel = parser.parse(channelFile.readAsStringSync());
+  final channelContent = channelFile.readAsStringSync();
+  final channel = parser.parse(channelContent);
 
   if (channel.isClosed) {
     return _error('Channel "$normalizedChannelId" is closed.');
@@ -410,7 +562,7 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
 
   final formatter = const ChannelFormatter();
 
-  var content = channelFile.readAsStringSync();
+  var content = channelContent;
   if (channel.status == ChannelStatus.open) {
     content = formatter.updateStatus(content, ChannelStatus.active);
   }
@@ -458,7 +610,8 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
   }
 
   final parser = const ChannelParser();
-  final channel = parser.parse(channelFile.readAsStringSync());
+  final channelContent = channelFile.readAsStringSync();
+  final channel = parser.parse(channelContent);
 
   if (channel.isClosed) {
     return _error('Channel "$normalizedChannelId" is closed.');
@@ -486,7 +639,7 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
   final formatter = const ChannelFormatter();
   final decisionBlock = formatter.formatDecision(decision);
 
-  final updatedContent = channelFile.readAsStringSync() + decisionBlock;
+  final updatedContent = channelContent + decisionBlock;
   channelFile.writeAsStringSync(updatedContent);
 
   return CallToolResult(content: [
@@ -589,7 +742,8 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
   }
 
   final parser = const ChannelParser();
-  final channel = parser.parse(channelFile.readAsStringSync());
+  final channelContent = channelFile.readAsStringSync();
+  final channel = parser.parse(channelContent);
 
   if (channel.isClosed) {
     return _error('Channel "$normalizedChannelId" is already closed.');
@@ -607,7 +761,7 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
 
   final newStatus = ChannelStatus.fromString(status);
   final formatter = const ChannelFormatter();
-  var content = channelFile.readAsStringSync();
+  var content = channelContent;
   content = formatter.updateStatus(content, newStatus);
   channelFile.writeAsStringSync(content);
 
@@ -649,6 +803,20 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
         'Permission violations: Agent "${agentConfig.role}" cannot perform action "promote_to_sdd"');
   }
 
+  final channelFile = _channelFileFor(config, normalizedChannelId);
+  if (!channelFile.existsSync()) {
+    return _error('Channel "$normalizedChannelId" not found.');
+  }
+  final channel = const ChannelParser().parse(channelFile.readAsStringSync());
+  if (channel.status != ChannelStatus.accepted) {
+    return _error(
+        'Channel "$normalizedChannelId" must be accepted before promotion. Current status: ${channel.status.toYamlValue()}');
+  }
+  if (channel.decisions.isEmpty) {
+    return _error(
+        'Channel "$normalizedChannelId" has no structured decision to promote.');
+  }
+
   if (target == 'sdd-ai') {
     if (!workspace.hasSddAi()) {
       return _error(
@@ -666,18 +834,265 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
     }
   }
 
-  final channelFile = _channelFileFor(config, normalizedChannelId);
   final decisionFile = _decisionFileFor(config, normalizedChannelId);
-
-  if (!channelFile.existsSync()) {
-    return _error('Channel "$normalizedChannelId" not found.');
-  }
 
   decisionFile.parent.createSync(recursive: true);
   decisionFile.writeAsStringSync(channelFile.readAsStringSync());
 
   return CallToolResult(content: [
     TextContent(text: 'Decision promoted to: ${decisionFile.path}'),
+  ]);
+}
+
+Future<CallToolResult> _initWorkspace(Map<String, dynamic> args) async {
+  final workspace = const Workspace();
+  if (workspace.isInitialized()) {
+    return _error('Walki workspace already exists.');
+  }
+  final agents = (args['agents'] as String? ?? 'codex,claude')
+      .split(',')
+      .map((s) => s.trim())
+      .where((s) => s.isNotEmpty)
+      .toList();
+  final template = args['template'] as String? ?? 'minimal';
+  final sddAi = args['sdd_ai'] as bool? ?? false;
+  try {
+    final dir = workspace.init(
+      template: template,
+      agentNames: agents,
+      sddAi: sddAi,
+    );
+    return CallToolResult(content: [
+      TextContent(
+          text:
+              'Walki workspace initialized at $dir with agents: ${agents.join(', ')}'),
+    ]);
+  } catch (e) {
+    return _error('Failed to initialize workspace: $e');
+  }
+}
+
+Future<CallToolResult> _listAgents(Map<String, dynamic> args) async {
+  final config = _loadConfigForMcp();
+  if (config == null) {
+    return _error('Walki workspace not initialized.');
+  }
+  if (config.agents.isEmpty) {
+    return CallToolResult(
+        content: [TextContent(text: 'No agents registered.')]);
+  }
+  final buffer = StringBuffer('Agents:\n');
+  for (final entry in config.agents.entries) {
+    buffer.writeln(
+        '- ${entry.key}: ${entry.value.role}${entry.value.description.isEmpty ? '' : ' - ${entry.value.description}'}');
+  }
+  return CallToolResult(content: [TextContent(text: buffer.toString())]);
+}
+
+Future<CallToolResult> _addAgent(Map<String, dynamic> args) async {
+  final workspace = const Workspace();
+  if (!workspace.isInitialized()) {
+    return _error('Walki workspace not initialized.');
+  }
+  final id = args['id'] as String;
+  final normalizedId = _sanitizeArtifactId(id);
+  if (normalizedId == null) {
+    return _error('Invalid agent ID "$id".');
+  }
+  final role = args['role'] as String? ?? 'implementer';
+  final description = args['description'] as String? ?? '';
+  final config = workspace.loadConfig();
+  if (config.agents.containsKey(normalizedId)) {
+    return _error('Agent "$normalizedId" already exists.');
+  }
+  final agentConfig = AgentConfig.forRole(role, description: description);
+  final agents = Map<String, AgentConfig>.from(config.agents)
+    ..[normalizedId] = agentConfig;
+  workspace.saveConfig(config.copyWith(agents: agents));
+  final file = _agentFileFor(normalizedId);
+  file.parent.createSync(recursive: true);
+  file.writeAsStringSync(generateAgentMarkdown(normalizedId, agentConfig));
+  return CallToolResult(content: [
+    TextContent(
+        text: 'Agent "$normalizedId" added with role ${agentConfig.role}.'),
+  ]);
+}
+
+Future<CallToolResult> _listRules(Map<String, dynamic> args) async {
+  final config = _loadConfigForMcp();
+  if (config == null) {
+    return _error('Walki workspace not initialized.');
+  }
+  final dir = Directory(_absoluteDir(config.storage.rulesDir));
+  if (!dir.existsSync()) {
+    return CallToolResult(content: [TextContent(text: 'No rules found.')]);
+  }
+  final files = dir
+      .listSync()
+      .whereType<File>()
+      .where((f) => f.path.endsWith('.md'))
+      .toList()
+    ..sort((a, b) => a.path.compareTo(b.path));
+  if (files.isEmpty) {
+    return CallToolResult(content: [TextContent(text: 'No rules found.')]);
+  }
+  return CallToolResult(content: [
+    TextContent(
+        text:
+            'Rules:\n${files.map((f) => '- ${p.basenameWithoutExtension(f.path)} (${f.path})').join('\n')}'),
+  ]);
+}
+
+Future<CallToolResult> _addRule(Map<String, dynamic> args) async {
+  final config = _loadConfigForMcp();
+  if (config == null) {
+    return _error('Walki workspace not initialized.');
+  }
+  final name = _sanitizeArtifactId(args['name'] as String);
+  if (name == null) {
+    return _error('Invalid rule name.');
+  }
+  final file = _ruleFileFor(config, name);
+  if (file.existsSync()) {
+    return _error('Rule "$name" already exists.');
+  }
+  final description = args['description'] as String? ?? '';
+  file.parent.createSync(recursive: true);
+  file.writeAsStringSync(_newRuleContent(name, description));
+  return CallToolResult(
+      content: [TextContent(text: 'Rule "$name" created at ${file.path}.')]);
+}
+
+Future<CallToolResult> _showRule(Map<String, dynamic> args) async {
+  final config = _loadConfigForMcp();
+  if (config == null) {
+    return _error('Walki workspace not initialized.');
+  }
+  final name = _sanitizeArtifactId(args['name'] as String);
+  if (name == null) {
+    return _error('Invalid rule name.');
+  }
+  final file = _ruleFileFor(config, name);
+  if (!file.existsSync()) {
+    return _error('Rule "$name" not found.');
+  }
+  return CallToolResult(content: [TextContent(text: file.readAsStringSync())]);
+}
+
+Future<CallToolResult> _summarizeChannel(Map<String, dynamic> args) async {
+  final channelResult = _loadChannelForMcp(args['channel'] as String);
+  if (channelResult.error != null) {
+    return _error(channelResult.error!);
+  }
+  final channel = channelResult.channel!;
+  final buffer = StringBuffer();
+  buffer.writeln('# Summary: ${channel.id}');
+  buffer.writeln();
+  buffer.writeln('Status: ${channel.status.toYamlValue()}');
+  buffer.writeln('Turns: ${channel.turnCount}/${channel.maxTurns}');
+  buffer.writeln('Participants: ${channel.participants.join(', ')}');
+  if (channel.prompt.isNotEmpty) {
+    buffer.writeln('\n## Context\n');
+    buffer.writeln(channel.prompt);
+  }
+  for (final kind in [
+    MessageKind.proposal,
+    MessageKind.challenge,
+    MessageKind.agreement,
+    MessageKind.decision
+  ]) {
+    final messages = channel.messages.where((m) => m.kind == kind).toList();
+    if (messages.isEmpty) {
+      continue;
+    }
+    buffer.writeln('\n## ${kind.name}\n');
+    for (final message in messages) {
+      buffer.writeln(
+          '**${message.agent}** (${message.timestamp.toIso8601String()}):');
+      buffer.writeln(message.content);
+      buffer.writeln();
+    }
+  }
+  if (channel.decisions.isNotEmpty) {
+    buffer.writeln('\n## Decisions\n');
+    for (final decision in channel.decisions) {
+      buffer.writeln('- ${decision.status}: ${decision.summary}');
+    }
+  }
+  return CallToolResult(content: [TextContent(text: buffer.toString())]);
+}
+
+Future<CallToolResult> _exportChannel(Map<String, dynamic> args) async {
+  final channelResult = _loadChannelForMcp(args['channel'] as String);
+  if (channelResult.error != null) {
+    return _error(channelResult.error!);
+  }
+  final format = args['format'] as String? ?? 'markdown';
+  if (format == 'markdown') {
+    return CallToolResult(
+        content: [TextContent(text: channelResult.file!.readAsStringSync())]);
+  }
+  return CallToolResult(
+      content: [TextContent(text: _channelToJson(channelResult.channel!))]);
+}
+
+Future<CallToolResult> _doctor(Map<String, dynamic> args) async {
+  final workspace = const Workspace();
+  if (!workspace.isInitialized()) {
+    return _error('Walki workspace not initialized.');
+  }
+  final issues = <String>[];
+  for (final dir in [
+    'agents',
+    'rules',
+    'channels',
+    'decisions',
+    'tasks',
+    'state',
+    'locks'
+  ]) {
+    if (!Directory(p.join('.walki', dir)).existsSync()) {
+      issues.add('.walki/$dir/ directory missing.');
+    }
+  }
+  WalkiConfig config;
+  try {
+    config = workspace.loadConfig();
+  } catch (e) {
+    return _error('Invalid config.yaml: $e');
+  }
+  for (final agent in config.agents.keys) {
+    if (!_agentFileFor(agent).existsSync()) {
+      issues.add('Agent "$agent" is in config but missing its agent file.');
+    }
+  }
+  final channelsDir = Directory(_absoluteDir(config.storage.channelDir));
+  if (channelsDir.existsSync()) {
+    final parser = const ChannelParser();
+    final permissionEngine = const PermissionEngine();
+    for (final file in channelsDir
+        .listSync()
+        .whereType<File>()
+        .where((f) => f.path.endsWith('.md'))) {
+      try {
+        final channel = parser.parse(file.readAsStringSync());
+        issues.addAll(permissionEngine
+            .validateChannelHealth(channel)
+            .map((issue) => 'Channel ${channel.id}: $issue'));
+      } catch (e) {
+        issues.add('Failed to parse ${file.path}: $e');
+      }
+    }
+  }
+  if (issues.isEmpty) {
+    return CallToolResult(content: [
+      TextContent(text: 'Walki workspace is healthy. No issues found.')
+    ]);
+  }
+  return CallToolResult(content: [
+    TextContent(
+        text:
+            'Found ${issues.length} issue(s):\n${issues.map((i) => '- $i').join('\n')}')
   ]);
 }
 
@@ -719,25 +1134,94 @@ File _decisionFileFor(WalkiConfig config, String id) {
   return _safeMarkdownFile(baseDir: config.storage.decisionDir, id: id);
 }
 
-String _generateAgentPrompt(String agentId, String role, String channelId) {
-  final roleDesc = role == 'implementer'
-      ? 'implementation-oriented'
-      : role == 'reviewer'
-          ? 'architecture and review-oriented'
-          : 'owner and decision-maker';
-  final focus = role == 'implementer'
-      ? 'Focus on implementation plan, edge cases, migrations, and tests.'
-      : role == 'reviewer'
-          ? 'Focus on architecture, security, correctness, maintainability, and tradeoffs. Challenge weak proposals constructively.'
-          : 'You are the owner. Accept or reject decisions.';
-  return 'You are $agentId, the $roleDesc agent in a Walki debate.\n\n'
-      'Channel:\n.walki/channels/$channelId.md\n\n'
-      'Read the entire channel before writing.\n'
-      'Append only.\n'
-      'End your message with OVER.\n'
-      '$focus\n'
-      'Do not accept final decisions without human confirmation.\n'
-      'You may propose decisions.\n';
+File _ruleFileFor(WalkiConfig config, String id) {
+  return _safeMarkdownFile(baseDir: config.storage.rulesDir, id: id);
+}
+
+File _agentFileFor(String id) {
+  return _safeMarkdownFile(baseDir: '.walki/agents', id: id);
+}
+
+WalkiConfig? _loadConfigForMcp() {
+  final workspace = const Workspace();
+  if (!workspace.isInitialized()) {
+    return null;
+  }
+  return workspace.loadConfig();
+}
+
+class _LoadedChannel {
+  const _LoadedChannel({this.channel, this.file, this.error});
+
+  final Channel? channel;
+  final File? file;
+  final String? error;
+}
+
+_LoadedChannel _loadChannelForMcp(String rawId) {
+  final config = _loadConfigForMcp();
+  if (config == null) {
+    return const _LoadedChannel(error: 'Walki workspace not initialized.');
+  }
+  final id = _sanitizeArtifactId(rawId);
+  if (id == null) {
+    return _LoadedChannel(error: 'Invalid channel ID "$rawId".');
+  }
+  final file = _channelFileFor(config, id);
+  if (!file.existsSync()) {
+    return _LoadedChannel(error: 'Channel "$id" not found.');
+  }
+  try {
+    return _LoadedChannel(
+      channel: const ChannelParser().parse(file.readAsStringSync()),
+      file: file,
+    );
+  } catch (e) {
+    return _LoadedChannel(error: 'Failed to parse channel "$id": $e');
+  }
+}
+
+String _newRuleContent(String name, String description) {
+  final title = name
+      .split('-')
+      .map((word) =>
+          word.isEmpty ? word : word[0].toUpperCase() + word.substring(1))
+      .join(' ');
+  return '# $title Rules\n\n${description.isNotEmpty ? '$description\n\n' : ''}- Add project-specific guidance here.\n';
+}
+
+String _channelToJson(Channel channel) {
+  final data = {
+    'id': channel.id,
+    'status': channel.status.toYamlValue(),
+    'created_at': channel.createdAt.toIso8601String(),
+    'participants': channel.participants,
+    'prompt': channel.prompt,
+    'max_turns': channel.maxTurns,
+    'messages': channel.messages
+        .map(
+          (m) => {
+            'timestamp': m.timestamp.toIso8601String(),
+            'agent': m.agent,
+            'kind': m.kind.name,
+            'content': m.content,
+            'ends_with_over': m.endsWithOver,
+          },
+        )
+        .toList(),
+    'decisions': channel.decisions
+        .map(
+          (d) => {
+            'status': d.status,
+            'summary': d.summary,
+            'rationale': d.rationale,
+            'risks': d.risks,
+            'required_tests': d.requiredTests,
+          },
+        )
+        .toList(),
+  };
+  return const JsonEncoder.withIndent('  ').convert(data);
 }
 
 CallToolResult _error(String message) {

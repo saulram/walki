@@ -43,18 +43,29 @@ class WalkiConfig {
     final agentsRaw = yaml['agents'] as Map<dynamic, dynamic>? ?? {};
     final agents = <String, AgentConfig>{};
     for (final entry in agentsRaw.entries) {
-      agents[entry.key as String] = AgentConfig.fromYaml(entry.value as Map<dynamic, dynamic>);
+      agents[entry.key as String] =
+          AgentConfig.fromYaml(entry.value as Map<dynamic, dynamic>);
     }
 
     return WalkiConfig(
       version: yaml['version'] as int? ?? 1,
-      project: ProjectConfig.fromYaml(yaml['project'] as Map<dynamic, dynamic>? ?? {}),
-      storage: StorageConfig.fromYaml(yaml['storage'] as Map<dynamic, dynamic>? ?? {}),
+      project: ProjectConfig.fromYaml(
+        yaml['project'] as Map<dynamic, dynamic>? ?? {},
+      ),
+      storage: StorageConfig.fromYaml(
+        yaml['storage'] as Map<dynamic, dynamic>? ?? {},
+      ),
       agents: agents,
-      instructions: InstructionConfig.fromYaml(yaml['instructions'] as Map<dynamic, dynamic>? ?? {}),
-      limits: LimitsConfig.fromYaml(yaml['limits'] as Map<dynamic, dynamic>? ?? {}),
-      decisions: DecisionsConfig.fromYaml(yaml['decisions'] as Map<dynamic, dynamic>? ?? {}),
-      sddAi: SddAiConfig.fromYaml(yaml['sdd_ai'] as Map<dynamic, dynamic>? ?? {}),
+      instructions: InstructionConfig.fromYaml(
+        yaml['instructions'] as Map<dynamic, dynamic>? ?? {},
+      ),
+      limits:
+          LimitsConfig.fromYaml(yaml['limits'] as Map<dynamic, dynamic>? ?? {}),
+      decisions: DecisionsConfig.fromYaml(
+        yaml['decisions'] as Map<dynamic, dynamic>? ?? {},
+      ),
+      sddAi:
+          SddAiConfig.fromYaml(yaml['sdd_ai'] as Map<dynamic, dynamic>? ?? {}),
     );
   }
 
@@ -118,6 +129,7 @@ class StorageConfig {
   const StorageConfig({
     this.primaryFormat = 'markdown',
     this.channelDir = '.walki/channels',
+    this.rulesDir = '.walki/rules',
     this.decisionDir = '.walki/decisions',
     this.taskDir = '.walki/tasks',
     this.generatedStateDir = '.walki/state',
@@ -128,6 +140,9 @@ class StorageConfig {
 
   /// Relative directory for channel files.
   final String channelDir;
+
+  /// Relative directory for rule files.
+  final String rulesDir;
 
   /// Relative directory for promoted decision files.
   final String decisionDir;
@@ -143,9 +158,11 @@ class StorageConfig {
     return StorageConfig(
       primaryFormat: yaml['primary_format'] as String? ?? 'markdown',
       channelDir: yaml['channel_dir'] as String? ?? '.walki/channels',
+      rulesDir: yaml['rules_dir'] as String? ?? '.walki/rules',
       decisionDir: yaml['decision_dir'] as String? ?? '.walki/decisions',
       taskDir: yaml['task_dir'] as String? ?? '.walki/tasks',
-      generatedStateDir: yaml['generated_state_dir'] as String? ?? '.walki/state',
+      generatedStateDir:
+          yaml['generated_state_dir'] as String? ?? '.walki/state',
     );
   }
 
@@ -153,6 +170,7 @@ class StorageConfig {
   Map<String, dynamic> toYaml() => {
         'primary_format': primaryFormat,
         'channel_dir': channelDir,
+        'rules_dir': rulesDir,
         'decision_dir': decisionDir,
         'task_dir': taskDir,
         'generated_state_dir': generatedStateDir,
@@ -249,7 +267,8 @@ class LimitsConfig {
     return LimitsConfig(
       maxTurns: maxTurns ?? this.maxTurns,
       maxMessagesPerAgent: maxMessagesPerAgent ?? this.maxMessagesPerAgent,
-      maxDecisionsPerChannel: maxDecisionsPerChannel ?? this.maxDecisionsPerChannel,
+      maxDecisionsPerChannel:
+          maxDecisionsPerChannel ?? this.maxDecisionsPerChannel,
       requireOverMarker: requireOverMarker ?? this.requireOverMarker,
       stopOnConsensus: stopOnConsensus ?? this.stopOnConsensus,
       stopOnBlocked: stopOnBlocked ?? this.stopOnBlocked,
@@ -326,7 +345,8 @@ class SddAiConfig {
     return SddAiConfig(
       enabled: yaml['enabled'] as bool? ?? false,
       changeDir: yaml['change_dir'] as String? ?? 'sdd-ai/changes',
-      architectureDir: yaml['architecture_dir'] as String? ?? 'sdd-ai/architecture',
+      architectureDir:
+          yaml['architecture_dir'] as String? ?? 'sdd-ai/architecture',
       specsDir: yaml['specs_dir'] as String? ?? 'sdd-ai/specs',
     );
   }
