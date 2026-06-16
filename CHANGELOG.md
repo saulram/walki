@@ -1,3 +1,7 @@
+# 0.4.1
+
+- Fix `walki init` wizard to list agent roles and validate role input
+
 # 0.4.0
 
 - Add interactive `walki init` wizard with detection for Claude, Codex, Gemini, and opencode
