@@ -159,7 +159,9 @@ class DebateCommand extends Command<int> {
     }
 
     logger.info(
-        'Use ${lightCyan.wrap('walki say <agent> $channelId "message"')} to post messages.');
+        'Use ${lightCyan.wrap('walki say <agent> $channelId "message"')} to post messages, or copy the prompts above into your agent sessions (Codex, Claude Code, Gemini CLI, etc.).');
+    logger.info(
+        'Walki does not automatically invoke agent binaries; it is a coordination protocol.');
 
     return 0;
   }

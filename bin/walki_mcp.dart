@@ -18,7 +18,7 @@ void main(List<String> args) async {
   final server = McpServer.createServer(
     McpServerConfig(
       name: 'walki',
-      version: '0.1.1',
+      version: '0.4.2',
       capabilities: ServerCapabilities.simple(tools: true),
     ),
   );

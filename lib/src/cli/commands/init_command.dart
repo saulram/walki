@@ -134,15 +134,17 @@ class InitCommand extends Command<int> {
       logger.info('');
       logger.info('Next steps:');
       logger.info(
-          '  1. ${lightCyan.wrap('walki debate <topic> "question"')} - Start a debate');
+          '  1. ${lightCyan.wrap('walki debate <topic> "question"')} - Create a channel and get agent prompts');
       logger.info(
-          '  2. ${lightCyan.wrap('walki agent add <name> --role <role>')} - Add more agents');
+          '  2. ${lightCyan.wrap('Copy prompts')} into your agent CLIs or use Walki as an MCP tool');
       logger.info(
-          '  3. ${lightCyan.wrap('walki rules edit <name>')} - Edit custom rules');
+          '  3. ${lightCyan.wrap('walki agent add <name>')} - Add more agents');
       logger.info(
-          '  4. ${lightCyan.wrap('walki rules draft')} - Debate repo-specific rules');
+          '  4. ${lightCyan.wrap('walki rules edit <name>')} - Edit custom rules');
       logger.info(
-          '  5. ${lightCyan.wrap('walki mcp init --agent <agent>')} - Configure project MCP');
+          '  5. ${lightCyan.wrap('walki rules draft')} - Debate repo-specific rules');
+      logger.info(
+          '  6. ${lightCyan.wrap('walki mcp init --agent <agent>')} - Configure project MCP');
 
       return 0;
     } catch (e) {

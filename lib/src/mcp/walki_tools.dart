@@ -13,7 +13,10 @@ import '../sdd_ai/sdd_ai_adapter.dart';
 import '../storage/workspace.dart';
 import '../validation/permission_engine.dart';
 
+String _projectDir = Directory.current.path;
+
 void registerWalkiTools(Server server) {
+  _projectDir = Directory.current.path;
   server.addTool(
     name: 'walki_open_channel',
     description:
@@ -360,7 +363,7 @@ void registerWalkiTools(Server server) {
 
 Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized. Run walki init first.');
   }
 
@@ -377,7 +380,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -397,7 +400,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
       .toList();
   final instructionLoader = const InstructionLoader();
   final instructions = instructionLoader.load(
-    projectDir: Directory.current.path,
+    projectDir: _projectDir,
     configPaths: config.instructions.load,
     channelPaths:
         rules.map((r) => p.join(config.storage.rulesDir, '$r.md')).toList(),
@@ -451,7 +454,7 @@ Future<CallToolResult> _openChannel(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
 
@@ -465,7 +468,7 @@ Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -503,7 +506,7 @@ Future<CallToolResult> _readChannel(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
 
@@ -519,7 +522,7 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -579,7 +582,7 @@ Future<CallToolResult> _postMessage(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
 
@@ -599,7 +602,7 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -651,7 +654,7 @@ Future<CallToolResult> _proposeDecision(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _getStatus(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
 
@@ -659,7 +662,7 @@ Future<CallToolResult> _getStatus(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -716,7 +719,7 @@ Future<CallToolResult> _getStatus(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
 
@@ -731,7 +734,7 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -773,7 +776,7 @@ Future<CallToolResult> _closeChannel(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
 
@@ -788,7 +791,7 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
 
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Failed to load config: $e');
   }
@@ -818,7 +821,7 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
   }
 
   if (target == 'sdd-ai') {
-    if (!workspace.hasSddAi()) {
+    if (!workspace.hasSddAi(_projectDir)) {
       return _error(
           'sdd-ai directory not found. Enable sdd-ai integration or use target "decisions".');
     }
@@ -846,7 +849,7 @@ Future<CallToolResult> _promoteToSdd(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _initWorkspace(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (workspace.isInitialized()) {
+  if (workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace already exists.');
   }
   final agents = (args['agents'] as String? ?? 'codex,claude')
@@ -858,6 +861,7 @@ Future<CallToolResult> _initWorkspace(Map<String, dynamic> args) async {
   final sddAi = args['sdd_ai'] as bool? ?? false;
   try {
     final dir = workspace.init(
+      projectDir: _projectDir,
       template: template,
       agentNames: agents,
       sddAi: sddAi,
@@ -891,9 +895,14 @@ Future<CallToolResult> _listAgents(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _addAgent(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
+
+  // Management tools should generally be restricted or at least validated
+  // if an agent ID is provided in the future. For now, we allow it but
+  // we should be aware of who is calling.
+
   final id = args['id'] as String;
   final normalizedId = _sanitizeArtifactId(id);
   if (normalizedId == null) {
@@ -1038,7 +1047,7 @@ Future<CallToolResult> _exportChannel(Map<String, dynamic> args) async {
 
 Future<CallToolResult> _doctor(Map<String, dynamic> args) async {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return _error('Walki workspace not initialized.');
   }
   final issues = <String>[];
@@ -1051,13 +1060,13 @@ Future<CallToolResult> _doctor(Map<String, dynamic> args) async {
     'state',
     'locks'
   ]) {
-    if (!Directory(p.join('.walki', dir)).existsSync()) {
+    if (!Directory(p.join(_projectDir, '.walki', dir)).existsSync()) {
       issues.add('.walki/$dir/ directory missing.');
     }
   }
   WalkiConfig config;
   try {
-    config = workspace.loadConfig();
+    config = workspace.loadConfig(_projectDir);
   } catch (e) {
     return _error('Invalid config.yaml: $e');
   }
@@ -1065,6 +1074,9 @@ Future<CallToolResult> _doctor(Map<String, dynamic> args) async {
     if (!_agentFileFor(agent).existsSync()) {
       issues.add('Agent "$agent" is in config but missing its agent file.');
     }
+  }
+  if (config.sddAi.enabled && !workspace.hasSddAi(_projectDir)) {
+    issues.add('sdd-ai integration enabled but sdd-ai/ directory not found.');
   }
   final channelsDir = Directory(_absoluteDir(config.storage.channelDir));
   if (channelsDir.existsSync()) {
@@ -1110,7 +1122,8 @@ String? _sanitizeArtifactId(String raw) {
 }
 
 String _absoluteDir(String dirPath) {
-  return p.normalize(p.absolute(dirPath));
+  if (p.isAbsolute(dirPath)) return p.normalize(dirPath);
+  return p.normalize(p.join(_projectDir, dirPath));
 }
 
 File _safeMarkdownFile({
@@ -1144,10 +1157,10 @@ File _agentFileFor(String id) {
 
 WalkiConfig? _loadConfigForMcp() {
   final workspace = const Workspace();
-  if (!workspace.isInitialized()) {
+  if (!workspace.isInitialized(_projectDir)) {
     return null;
   }
-  return workspace.loadConfig();
+  return workspace.loadConfig(_projectDir);
 }
 
 class _LoadedChannel {

@@ -47,6 +47,9 @@ String generateAgentPrompt(String id, AgentConfig config, String channelId) {
       'Append only.\n'
       'End your message with OVER.\n'
       '$focus\n'
+      'If you created this channel or are the lead agent, you are the Coordinator. '
+      'You should use Walki tools to invite participants (walki_add_agent) and manage turns. '
+      'Walki is a protocol; you must coordinate the flow of the debate.\n'
       'Do not accept final decisions without human confirmation.\n'
       'You may propose decisions.\n';
 }

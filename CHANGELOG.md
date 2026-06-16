@@ -1,3 +1,10 @@
+# 0.4.2
+
+- Fix MCP server `cwd` fault by capturing working directory at startup
+- Clarify Coordinator role in README and agent prompts
+- Improve CLI next-steps and debate instructions to set clear agent expectations
+- Sync MCP server version metadata
+
 # 0.4.1
 
 - Fix `walki init` wizard to list agent roles and validate role input

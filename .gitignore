@@ -2,7 +2,9 @@
 .packages
 build/
 pubspec.lock
-.walki/
+.walki/*
+!.walki/rules/
+!.walki/rules/*.md
 *.o
 *.obj
 walki

@@ -110,6 +110,28 @@ walki doctor
 walki promote auth --to decisions
 ```
 
+## How to use Walki
+
+Walki provides the **protocol and storage**, but it does not automatically execute agent binaries. You can use it in two ways:
+
+### 1. Manual coordination (Human-mediated)
+This is the default flow for CLI users:
+1.  **Create a channel**: Run `walki debate <topic> "question"`.
+2.  **Copy prompts**: Walki prints tailored prompts for each agent.
+3.  **Action agents**: Open your agent CLIs (Claude Code, Gemini CLI, etc.) and paste the prompts.
+4.  **Exchange messages**: Agents write to the channel file; you use `walki say` or let them write directly.
+
+### 2. Automated coordination (Agent-mediated via MCP)
+If you use an MCP-compatible agent (like **opencode** or **Claude Desktop**):
+1.  **Configure Walki MCP**: Run `walki mcp init --agent <name>`.
+2.  **Delegate coordination**: Ask the coordinator agent to "Open a Walki debate and coordinate with Codex".
+3.  **Agent triggers Agent**: The coordinator agent uses the `walki` tools to create channels and post messages. It may also use other MCP tools to "call" participant agents if it has that capability.
+
+### The Coordinator Role
+In an agent-mediated workflow, one agent (usually the one you started the conversation with) acts as the **Coordinator**. 
+- **Responsibility**: It is responsible for calling `walki_open_channel`, reading the prompts for other participants, and either inviting them (if they have MCP tools) or asking the human to action them.
+- **Protocol**: The Coordinator should use `walki_add_agent` to register any new participants that join the debate mid-flow.
+
 ## How it works
 
 ### Workspace structure
