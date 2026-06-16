@@ -186,8 +186,11 @@ class InitCommand extends Command<int> {
     for (final id in selected) {
       final definition = registry.definitionFor(id);
       final base = definition?.defaultConfig ?? AgentConfig.implementer();
-      final role =
-          _prompt('Role for $id [${base.role}]', defaultValue: base.role);
+      final role = _promptRole(
+        id,
+        defaultValue: base.role,
+        logger: logger,
+      );
       final description = _prompt(
         'Description for $id [${base.description}]',
         defaultValue: base.description,
@@ -301,6 +304,35 @@ bool _confirm(String label, {bool defaultValue = false}) {
     return defaultValue;
   }
   return response == 'y' || response == 'yes';
+}
+
+String _promptRole(
+  String agentId, {
+  required String defaultValue,
+  required Logger logger,
+}) {
+  const roles = <String, String>{
+    'implementer': 'implementation and tests',
+    'reviewer': 'architecture review and constructive challenges',
+    'owner': 'human decision-maker who accepts/closes/promotes',
+  };
+
+  logger.info('Available roles:');
+  for (final entry in roles.entries) {
+    logger.info('  - ${entry.key}: ${entry.value}');
+  }
+
+  while (true) {
+    stdout.write('Role for $agentId [$defaultValue]: ');
+    final response = stdin.readLineSync()?.trim().toLowerCase() ?? '';
+    final role = response.isEmpty ? defaultValue : response;
+    if (roles.containsKey(role)) {
+      return role;
+    }
+    logger.err(
+      'Unknown role "$role". Choose one of: ${roles.keys.join(', ')}.',
+    );
+  }
 }
 
 Map<String, AgentConfig> _defaultAgentConfigs(List<String> agentNames) {
